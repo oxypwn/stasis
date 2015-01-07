@@ -66,6 +66,10 @@ func (d *Driver) Create() error {
 	return nil
 }
 
+func (d *Driver) GetState() (state.State, error) {
+	return state.None, nil
+}
+
 func (d *Driver) Start() error {
 	return fmt.Errorf("hosts without a driver cannot be started")
 }
