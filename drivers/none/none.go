@@ -7,6 +7,8 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/docker/api"
 	"github.com/pandrew/stasis/drivers"
+	"github.com/pandrew/stasis/state"
+
 )
 
 // Driver is the driver used when no driver is selected. It is used to
