@@ -1,9 +1,7 @@
 package drivers
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 )
 
