@@ -7,7 +7,7 @@ import (
 	"sort"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/state"
+	"github.com/pandrew/stasis/state"
 )
 
 // Driver defines how a host is created and controlled. Different types of
