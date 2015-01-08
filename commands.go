@@ -201,8 +201,6 @@ var Commands = []cli.Command{
 
 			w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
 
-			log.Printf("Driver to create machine with. Available drivers: %s", strings.Join(drivers.GetDriverNames(), ", "),)
-
 			if !quiet {
 				fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATUS")
 			}
