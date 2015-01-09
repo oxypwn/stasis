@@ -15,7 +15,7 @@ import (
 
 
 type Host struct {
-	Name       string `json:"-"`
+	Name       string
 	DriverName string
 	Driver     drivers.Driver
 	Macaddress string

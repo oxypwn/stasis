@@ -67,6 +67,8 @@ func ReturnIpxe(w http.ResponseWriter, r *http.Request) {
 
 	if host.Status == "ACTIVE" {
 		renderTemplate(w, host.Template, host)
+		host.Status = "INSTALLED"
+		host.SaveConfig()
 	} else {
 		http.NotFound(w, r)
 		return
