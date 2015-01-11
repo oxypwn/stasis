@@ -133,6 +133,10 @@ var Commands = []cli.Command{
     		Usage: "default port to listen on",
     		EnvVar: "STASIS_HTTP_PORT",
   		},
+  		cli.BoolFlag{
+    		Name: "gather, g",
+    		Usage: "Gather mac address",
+  		},
   	},
 		Name: "listen",
 		Usage: "Listens on port",
@@ -170,12 +174,10 @@ func cmdCreate(c *cli.Context) {
 
 	ValidateHostName(name)
 
-	if mac == "" {
-		cli.ShowCommandHelp(c, "create")
-		os.Exit(1)
+	if mac != "" {
+		ValidateMacaddr(mac)
 	}
 
-	ValidateMacaddr(mac)
 
 	if template == "" {
 		cli.ShowCommandHelp(c, "create")
@@ -197,7 +199,6 @@ func cmdCreate(c *cli.Context) {
 }
 
 func cmdToggle(c *cli.Context) {
-	fmt.Println(GetIpxeDir())
 
 	host := getHost(c)
 	
@@ -212,7 +213,15 @@ func cmdToggle(c *cli.Context) {
 	host.SaveConfig()
 
 }
-
+/*
+var global string
+func cmdGather(c *cli.Context) {
+		host := getHost(c)
+		global := host.Name
+		log.Println("global", global)
+		initRouter()
+}
+*/
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
 	store := NewStore(c.GlobalString("storage-path"))
@@ -262,9 +271,9 @@ func cmdLs(c *cli.Context) {
 }
 
 func cmdListen(c *cli.Context) {
+	gather := c.Bool("gather")
 	//store := NewStore()
 	os.Setenv("STASIS_HTTP_PORT", c.String("port"))
-
 	store := NewStore(c.GlobalString("storage-path"))
 	_, err := os.Stat(store.Path)
 	if os.IsNotExist(err) {
@@ -272,8 +281,37 @@ func cmdListen(c *cli.Context) {
 		cli.ShowCommandHelp(c, "create")
 		os.Exit(1)	
 	} else if err == nil {
-		initRouter()
+		if gather {
+			name := c.Args().First()
+			host, err := store.Load(name)
+			if err != nil {
+				log.Fatalf("error loading host: %v", err)
+			}
+
+			if err := store.SetActive(host); err != nil {
+				log.Fatalf("error setting active host: %v", err)
+			}
+		} 
+		initRouter(gather)
 	
 	}
 }
 
+func getHost(c *cli.Context) *Host {
+	name := c.Args().First()
+	store := NewStore(c.GlobalString("storage-path"))
+
+	if name == "" {
+		host, err := store.GetActive()
+		if err != nil {
+			log.Fatalf("unable to get active host: %v", err)
+		}
+		return host
+	}
+
+	host, err := store.Load(name)
+	if err != nil {
+		log.Fatalf("unable to load host: %v", err)
+	}
+	return host
+}

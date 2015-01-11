@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/codegangsta/cli"
-	log "github.com/Sirupsen/logrus"
 	"github.com/pandrew/stasis/drivers"
 
 )
@@ -128,21 +126,3 @@ func (h *Host) LoadConfig() error {
 
 }
 
-func getHost(c *cli.Context) *Host {
-	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"))
-
-	if name == "" {
-		host, err := store.GetActive()
-		if err != nil {
-			log.Fatalf("unable to get active host: %v", err)
-		}
-		return host
-	}
-
-	host, err := store.Load(name)
-	if err != nil {
-		log.Fatalf("unable to load host: %v", err)
-	}
-	return host
-}

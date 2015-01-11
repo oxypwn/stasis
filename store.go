@@ -74,7 +74,6 @@ func (s *Store) GetMacaddress(macaddress string) (*Host, error) {
 		if file.IsDir() {
 			host, err := s.Load(file.Name())
 			if host.Macaddress == macaddress {
-				log.Printf(" match ")
 				return host, nil
 			} else if host.Macaddress != macaddress {
 				log.Errorf("no match")		

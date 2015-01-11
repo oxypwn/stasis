@@ -1,16 +1,15 @@
 package main
 
 import (
-	"path/filepath"
+	"fmt"
 	"html/template"
 	"net/http"
 	"os"
-	"fmt"
+	"path/filepath"
 	//"io/ioutil"
-	"github.com/gorilla/mux"
 	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/mux"
 	"github.com/pandrew/stasis/drivers"
-
 )
 
 func GetStasisDir() string {
@@ -32,23 +31,23 @@ func IpxeDirExists() (bool, error) {
 }
 
 
-func initRouter() {
+func initRouter(gather bool) {
 	r := mux.NewRouter()
 	r.HandleFunc("/{id}", ReturnIpxe)
+	if gather {
+		r.HandleFunc("/{id}/gather", GatherMac)
+	}
 	http.Handle("/", r)
-
 
 	port := os.Getenv("STASIS_HTTP_PORT")
 	log.Info("Listening on: ", port)
 	path := os.Getenv("STASIS_STORAGE_PATH")
 	log.Info("Using path: ", path)
 
-
-
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(path)))
 
 	log.Println("Listening...")
-	http.ListenAndServe(":" + os.Getenv("STASIS_HTTP_PORT"), nil)
+	http.ListenAndServe(":"+os.Getenv("STASIS_HTTP_PORT"), nil)
 }
 
 func ReturnIpxe(w http.ResponseWriter, r *http.Request) {
@@ -76,13 +75,53 @@ func ReturnIpxe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
+func GatherMac(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	log.Println(vars)
+	macaddress := vars["id"]
+	if macaddress == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ValidateMacaddr(macaddress)
+	
+	store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
+
+	host, err := store.GetActive()
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("Requesting: ", host)
+	
+	//log.Println("from gathermac", global)
+	//log.Println(x)
+	//store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
+
+
+
+	host.Macaddress = macaddress
+	host.SaveConfig()
+}
+
 var templates *template.Template
 
 func init() {
 	filenames := []string{}
 
-	dirIpxe := GetIpxeDir()
+	//store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
 
+	dirIpxe := GetIpxeDir()
+/*
+	err = os.MkdirAll(dirIpxe, 0700)
+	if err != nil {
+		log.Errorf("error")
+	}
+*/
+	if err := os.MkdirAll(dirIpxe, 0700); err != nil {
+		log.Println(err)
+	}
 	err := filepath.Walk(dirIpxe, func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() && filepath.Ext(path) == ".ipxe" {
 			filenames = append(filenames, path)
@@ -95,21 +134,20 @@ func init() {
 	}
 
 	if len(filenames) == 0 {
-		log.Errorf("There is no ipxe templates in: %q", dirIpxe )
+		log.Errorf("There is no ipxe templates in: %q", dirIpxe)
 		os.Exit(1)
 	}
-		
+
 	templates, err = template.ParseFiles(filenames...)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	
 
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, vars interface{}) {
-        err := templates.ExecuteTemplate(w, tmpl+".ipxe", vars)
-        if err != nil {
-                http.Error(w, err.Error(), http.StatusInternalServerError)
-        }
+	err := templates.ExecuteTemplate(w, tmpl+".ipxe", vars)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
