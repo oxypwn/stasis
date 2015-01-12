@@ -20,6 +20,7 @@ type hostListItem struct {
 	Active     bool
 	Status     string
 	DriverName string
+	Macaddress string
 }
 
 type hostListItemByName []hostListItem
@@ -48,6 +49,7 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 		Active:     isActive,
 		DriverName: host.Driver.DriverName(),
 		Status:		host.Status,
+		Macaddress: host.Macaddress,
 	}
 }
 
@@ -266,10 +268,8 @@ func cmdLs(c *cli.Context) {
 		}
 	}
 
-	if !quiet {
-		for i := 0; i < len(hostList); i++ {
-			items = append(items, <-hostListItems)
-		}
+	for i := 0; i < len(hostList); i++ {
+		items = append(items, <-hostListItems)
 	}
 
 	close(hostListItems)

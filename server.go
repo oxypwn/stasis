@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	 extIpxe string = ".ipxe" 
+	 extIpxe string = ".ipxe"
+	 extGohtml string = ".gohtml"
 )
 
 func GetStasisDir() string {
@@ -24,6 +25,11 @@ func GetStasisDir() string {
 func ipxeDir() string {
 	return filepath.Join(drivers.GetHomeDir(), ".stasis", "ipxe")
 }
+
+func gohtmlDir() string {
+	return filepath.Join(drivers.GetHomeDir(), ".stasis", "gohtml")
+}
+
 
 func DirExists(dir string) (bool, error) {
 	_, err := os.Stat(dir)
@@ -47,6 +53,7 @@ func postinstallDir() string {
 func initRouter(gather bool) {
 	r := mux.NewRouter()
 	r.HandleFunc("/{id}", ReturnIpxe)
+	r.HandleFunc("/info/stats", ReturnStats)
 	if gather {
 		r.HandleFunc("/{id}/gather", GatherMac)
 	}
@@ -61,6 +68,32 @@ func initRouter(gather bool) {
 
 	log.Println("Listening...")
 	http.ListenAndServe(":"+os.Getenv("STASIS_HTTP_PORT"), nil)
+}
+
+func ReturnStats(w http.ResponseWriter, r *http.Request) {
+	store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
+
+	hostList, err := store.List()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	items := []hostListItem{}
+	hostListItems := make(chan hostListItem)
+
+	for _, host := range hostList {
+		go getHostState(host, *store, hostListItems)
+
+	}
+
+	for i := 0; i < len(hostList); i++ {
+		items = append(items, <-hostListItems)
+	}
+
+	close(hostListItems)
+	renderTemplate(w, "index", extGohtml, items)
+
+	//fmt.Fprintln(w, items)
 }
 
 func ReturnIpxe(w http.ResponseWriter, r *http.Request) {
@@ -131,6 +164,8 @@ func init() {
 	if err := os.MkdirAll(dirIpxe, 0700); err != nil {
 		log.Println(err)
 	}
+	ValidateTemplates(dirIpxe, extIpxe)
+
 	dirInstall := installDir()
 	if err := os.MkdirAll(dirInstall, 0700); err != nil {
 		log.Println(err)
@@ -139,8 +174,11 @@ func init() {
 	if err := os.MkdirAll(dirPostinstall, 0700); err != nil {
 		log.Println(err)
 	}
-
-	ValidateTemplates(dirIpxe, extIpxe)
+	dirGohtml := gohtmlDir()
+	if err := os.MkdirAll(dirGohtml, 0700); err != nil {
+		log.Println(err)
+	}
+	ValidateTemplates(dirGohtml, extGohtml)
 
 }
 
