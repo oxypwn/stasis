@@ -23,6 +23,7 @@ func main() {
 
 	app := cli.NewApp()
 	app.Commands = Commands
+	app.CommandNotFound = cmdNotFound
 	app.Version = VERSION
 
 

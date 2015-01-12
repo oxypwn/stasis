@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net"
 	"os"
 	"path/filepath"
 	//"io/ioutil"
@@ -12,22 +13,34 @@ import (
 	"github.com/pandrew/stasis/drivers"
 )
 
+const (
+	 extIpxe string = ".ipxe" 
+)
+
 func GetStasisDir() string {
 	return fmt.Sprintf(filepath.Join(drivers.GetHomeDir(), ".stasis"))
 }
 
-func GetIpxeDir() string {
+func ipxeDir() string {
 	return filepath.Join(drivers.GetHomeDir(), ".stasis", "ipxe")
 }
 
-func IpxeDirExists() (bool, error) {
-	_, err := os.Stat(GetIpxeDir())
+func DirExists(dir string) (bool, error) {
+	_, err := os.Stat(dir)
 	if err == nil {
 		return true, nil
 	} else if os.IsNotExist(err) {
 		return false, nil
 	}
 	return false, err
+}
+
+func installDir() string {
+	return filepath.Join(drivers.GetHomeDir(), ".stasis", "install")
+}
+
+func postinstallDir() string {
+	return filepath.Join(drivers.GetHomeDir(), ".stasis", "postinstall")
 }
 
 
@@ -65,7 +78,7 @@ func ReturnIpxe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if host.Status == "ACTIVE" {
-		renderTemplate(w, host.Template, host)
+		renderTemplate(w, host.Template, extIpxe, host)
 		host.Status = "INSTALLED"
 		host.SaveConfig()
 	} else {
@@ -78,7 +91,6 @@ func ReturnIpxe(w http.ResponseWriter, r *http.Request) {
 
 func GatherMac(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	log.Println(vars)
 	macaddress := vars["id"]
 	if macaddress == "" {
 		http.NotFound(w, r)
@@ -93,13 +105,16 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println("Requesting: ", host)
+
+	ip := GetIP(r)
 	
-	//log.Println("from gathermac", global)
-	//log.Println(x)
-	//store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
-
-
+	if macaddress == host.Macaddress {
+		http.NotFound(w, r)
+		log.Errorf("Request from %s to modify %q with macaddress %s to %s DENIED" , ip, host.Name, host.Macaddress, macaddress)
+		return
+	} else {	
+		log.Printf("Request from %s to modify %q with macaddress %s to %s ACCEPTED" , ip, host.Name, host.Macaddress, macaddress)
+	}
 
 	host.Macaddress = macaddress
 	host.SaveConfig()
@@ -108,46 +123,38 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 var templates *template.Template
 
 func init() {
-	filenames := []string{}
+	//filenames := []string{}
 
 	//store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
 
-	dirIpxe := GetIpxeDir()
-/*
-	err = os.MkdirAll(dirIpxe, 0700)
-	if err != nil {
-		log.Errorf("error")
-	}
-*/
+	dirIpxe := ipxeDir()
 	if err := os.MkdirAll(dirIpxe, 0700); err != nil {
 		log.Println(err)
 	}
-	err := filepath.Walk(dirIpxe, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() && filepath.Ext(path) == ".ipxe" {
-			filenames = append(filenames, path)
-		}
-		return nil
-	})
-
-	if err != nil {
-		log.Fatalln(err)
+	dirInstall := installDir()
+	if err := os.MkdirAll(dirInstall, 0700); err != nil {
+		log.Println(err)
+	}
+	dirPostinstall := postinstallDir()
+	if err := os.MkdirAll(dirPostinstall, 0700); err != nil {
+		log.Println(err)
 	}
 
-	if len(filenames) == 0 {
-		log.Errorf("There is no ipxe templates in: %q", dirIpxe)
-		os.Exit(1)
-	}
-
-	templates, err = template.ParseFiles(filenames...)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	ValidateTemplates(dirIpxe, extIpxe)
 
 }
 
-func renderTemplate(w http.ResponseWriter, tmpl string, vars interface{}) {
-	err := templates.ExecuteTemplate(w, tmpl+".ipxe", vars)
+func renderTemplate(w http.ResponseWriter, tmpl string, ext string, vars interface{}) {
+	err := templates.ExecuteTemplate(w, tmpl+ext, vars)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func GetIP(r *http.Request) string {
+    if ipProxy := r.Header.Get("X-FORWARDED-FOR"); len(ipProxy) > 0 {
+        return ipProxy
+    }
+    ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+    return ip
 }

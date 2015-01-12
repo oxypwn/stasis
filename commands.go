@@ -39,7 +39,7 @@ func (h hostListItemByName) Less(i, j int) bool {
 func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 	isActive, err := store.IsActive(&host)
 	if err != nil {
-		log.Errorf("error determining whether host %q is active: %s",
+		log.Debugf("error determining whether host %q is active: %s",
 			host.Name, err)
 	}
 
@@ -144,6 +144,16 @@ var Commands = []cli.Command{
 	},
 }
 
+func cmdNotFound(c *cli.Context, command string) {
+	log.Fatalf(
+		"%s: '%s' is not a %s command. See '%s --help'.",
+		c.App.Name,
+		command,
+		c.App.Name,
+		c.App.Name,
+	)
+}
+
 func cmdInspect(c *cli.Context) {
 	prettyJSON, err := json.MarshalIndent(getHost(c), "", "    ")
 	if err != nil {
@@ -180,7 +190,7 @@ func cmdCreate(c *cli.Context) {
 
 
 	if template == "" {
-		cli.ShowCommandHelp(c, "create")
+		log.Errorf("Misisng --template option")
 		os.Exit(1)
 	}
 
@@ -204,10 +214,13 @@ func cmdToggle(c *cli.Context) {
 	
 	if host.Status == "INACTIVE" {
 		host.Status = "ACTIVE"
+		log.Infof("%s is now ACTIVE", host.Name)
 	} else if host.Status == "INSTALLED" {
-		host.Status = "INACTIVE"
+		host.Status = "ACTIVE"
+		log.Infof("%s is now ACTIVE", host.Name)
 	} else {
 		host.Status = "INACTIVE"
+		log.Infof("%s is now INATIVE", host.Name)
 	}
 
 	host.SaveConfig()
@@ -283,13 +296,20 @@ func cmdListen(c *cli.Context) {
 	} else if err == nil {
 		if gather {
 			name := c.Args().First()
-			host, err := store.Load(name)
-			if err != nil {
-				log.Fatalf("error loading host: %v", err)
-			}
+			if name == "" {
+				_, err := store.GetActive()
+				if err != nil {
+					log.Fatalf("unable to get active host: %v", err)
+				}
+			} else {
+				host, err := store.Load(name)
+				if err != nil {
+					log.Fatalf("error loading host: %v", err)
+				}
 
-			if err := store.SetActive(host); err != nil {
-				log.Fatalf("error setting active host: %v", err)
+				if err := store.SetActive(host); err != nil {
+					log.Fatalf("error setting active host: %v", err)
+				}
 			}
 		} 
 		initRouter(gather)

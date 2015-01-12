@@ -2,9 +2,10 @@ package main
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"html/template"
 	"os"
 	"regexp"
-	//"path/filepath"
+	"path/filepath"
 )
 
 func ValidateHostName(name string) (string, error) {
@@ -17,7 +18,7 @@ func ValidateHostName(name string) (string, error) {
 }
 
 func ValidateMacaddr(mac string) (string, error) {
-	validMacaddrPattern := regexp.MustCompile(`^([0-9A-F]{2}[-]){5}([0-9A-F]{2})+$`)
+	validMacaddrPattern := regexp.MustCompile(`^([0-9a-fA-F]{2}[-]){5}([0-9a-fA-F]{2})+$`)
 	if !validMacaddrPattern.MatchString(mac) {
 		log.Errorf("Invalid mac address %q, it must match %s", mac, validMacaddrPattern)
 		os.Exit(1)
@@ -25,3 +26,26 @@ func ValidateMacaddr(mac string) (string, error) {
 	return mac, nil
 }
 
+func ValidateTemplates(path, extension string) {
+	filenames := []string{}
+	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	if !info.IsDir() && filepath.Ext(path) == extension {
+		filenames = append(filenames, path)
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if len(filenames) == 0 {
+		log.Errorf("There is no ipxe templates in: %q", path)
+		os.Exit(1)
+	}
+
+	templates, err = template.ParseFiles(filenames...)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
