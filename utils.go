@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io/ioutil"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"html/template"
 	"os"
@@ -48,4 +50,11 @@ func ValidateTemplates(path, extension string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func listTemplates(path string) {
+	files, _ := ioutil.ReadDir(path)
+    for _, f := range files {
+            fmt.Println(f.Name())
+    }
 }

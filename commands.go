@@ -142,6 +142,11 @@ var Commands = []cli.Command{
 		Usage: "Listens on port",
 		Action: cmdListen,
 	},
+	{
+		Name: "template",
+		Usage: "List templates",
+		Action: cmdListTemplates,
+	},
 }
 
 func cmdNotFound(c *cli.Context, command string) {
@@ -317,6 +322,10 @@ func cmdListen(c *cli.Context) {
 	}
 }
 
+func cmdListTemplates(c *cli.Context) {
+	path := ipxeDir()
+	listTemplates(path)
+}
 func getHost(c *cli.Context) *Host {
 	name := c.Args().First()
 	store := NewStore(c.GlobalString("storage-path"))
