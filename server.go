@@ -256,45 +256,6 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 
 var templates *template.Template
 
-func init() {
-
-	//templates, err := 
-
-/*	filenames := []string{}
-	paths := []string{}
-	dirPreinstall := preinstallDir()
-	dirGohtml := gohtmlDir()
-	log.Println(dirPreinstall)
-	log.Println(extPreinstall)
-	if err := os.MkdirAll(dirPreinstall, 0700); err != nil {
-		log.Println(err)
-	}
-	paths := append(paths, preinstallDir(), gohtmlDir())
-	ValidateTemplates(dirPreinstall, extPreinstall)
-	log.Println(filenames)
-	/*dirInstall := installDir()
-	if err := os.MkdirAll(dirInstall, 0700); err != nil {
-		log.Println(err)
-	}
-	ValidateTemplates(dirInstall, extInstall)
-
-	dirPostinstall := postinstallDir()
-	if err := os.MkdirAll(dirPostinstall, 0700); err != nil {
-		log.Println(err)
-	}
-
-	dirGohtml := gohtmlDir()
-	if err := os.MkdirAll(dirGohtml, 0700); err != nil {
-		log.Println(err)
-	}
-	ValidateTemplates(dirGohtml, extGohtml)
-
-	templates, err = template.ParseFiles(filenames...)
-	if err != nil {
-		log.Fatalln(err)
-	}*/
-
-}
 
 func renderTemplate(w http.ResponseWriter, tmpl string, vars interface{}) {
 	err := templates.ExecuteTemplate(w, tmpl, vars)
