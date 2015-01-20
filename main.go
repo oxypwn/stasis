@@ -33,7 +33,7 @@ func main() {
 			Usage: "Enable debug mode",
 		},
 		cli.StringFlag{
-			EnvVar: "STASIS_STORAGE_PATH",
+			EnvVar: "STASIS_HOST_STORAGE_PATH",
 			Name:   "storage-path",
 			Usage:  "Configures storage path",
 		},

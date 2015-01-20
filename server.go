@@ -7,29 +7,38 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	//"io/ioutil"
+	"io/ioutil"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/pandrew/stasis/drivers"
+	"github.com/pandrew/stasis/gohtml"
 )
 
 const (
-	 extIpxe string = ".ipxe"
+	 extPreinstall string = ".preinstall"
 	 extGohtml string = ".gohtml"
+	 extInstall string = ".install"
 )
 
 func GetStasisDir() string {
 	return fmt.Sprintf(filepath.Join(drivers.GetHomeDir(), ".stasis"))
 }
 
-func ipxeDir() string {
-	return filepath.Join(drivers.GetHomeDir(), ".stasis", "ipxe")
+func preinstallDir() string {
+	return filepath.Join(GetStasisDir(), "preinstall")
 }
 
 func gohtmlDir() string {
 	return filepath.Join(drivers.GetHomeDir(), ".stasis", "gohtml")
 }
 
+func installDir() string {
+	return filepath.Join(drivers.GetHomeDir(), ".stasis", "install")
+}
+
+func postinstallDir() string {
+	return filepath.Join(drivers.GetHomeDir(), ".stasis", "postinstall")
+}
 
 func DirExists(dir string) (bool, error) {
 	_, err := os.Stat(dir)
@@ -41,27 +50,27 @@ func DirExists(dir string) (bool, error) {
 	return false, err
 }
 
-func installDir() string {
-	return filepath.Join(drivers.GetHomeDir(), ".stasis", "install")
-}
 
-func postinstallDir() string {
-	return filepath.Join(drivers.GetHomeDir(), ".stasis", "postinstall")
-}
 
 
 func initRouter(gather bool) {
 	r := mux.NewRouter()
-	r.HandleFunc("/{id}", ReturnIpxe)
-	r.HandleFunc("/info/stats", ReturnStats)
+	// Prepend uri with v1 for version 1 api. This will help error responds
+	// when using relative paths in links.
+	r.HandleFunc("/v1/{id}/preinstall", ReturnPreinstall)
+	r.HandleFunc("/v1/{id}/preinstall/raw", ReturnRawPreinstall)
+	r.HandleFunc("/v1/{id}/preinstall/preview", ReturnPreviewPreinstall)
+//	r.HandleFunc("/v1/{id}/install", ReturnInstall)
+//	r.HandleFunc("/v1/{id}/install/raw", ReturnRawInstall)
+	r.HandleFunc("/v1/info/stats", ReturnStats)
 	if gather {
-		r.HandleFunc("/{id}/gather", GatherMac)
+		r.HandleFunc("/v1/{id}/announce", GatherMac)
 	}
 	http.Handle("/", r)
 
 	port := os.Getenv("STASIS_HTTP_PORT")
 	log.Info("Listening on: ", port)
-	path := os.Getenv("STASIS_STORAGE_PATH")
+	path := os.Getenv("STASIS_HOST_STORAGE_PATH")
 	log.Info("Using path: ", path)
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(path)))
@@ -71,7 +80,7 @@ func initRouter(gather bool) {
 }
 
 func ReturnStats(w http.ResponseWriter, r *http.Request) {
-	store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
+	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
 
 	hostList, err := store.List()
 	if err != nil {
@@ -83,7 +92,6 @@ func ReturnStats(w http.ResponseWriter, r *http.Request) {
 
 	for _, host := range hostList {
 		go getHostState(host, *store, hostListItems)
-
 	}
 
 	for i := 0; i < len(hostList); i++ {
@@ -91,12 +99,60 @@ func ReturnStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	close(hostListItems)
-	renderTemplate(w, "index", extGohtml, items)
-
-	//fmt.Fprintln(w, items)
+	templates, err := template.New("stats").Parse(index)
+	if err != nil {
+        panic(err)
+    }
+    err = templates.Execute(w, items)
+	if err != nil {
+		fmt.Println("Fatal error ", err.Error())
+		os.Exit(1)
+	}
 }
 
-func ReturnIpxe(w http.ResponseWriter, r *http.Request) {
+
+func ReturnInstall(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	macaddress := vars["id"]
+
+	_, err := ValidateMacaddr(macaddress)
+	if err != nil {
+		http.NotFound(w, r)
+	} else {
+
+		store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
+		host, err := store.GetMacaddress(macaddress)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//var tmpl string
+		tmpl := host.Install + extInstall
+		renderTemplate(w, tmpl, host)
+	}
+
+}
+
+func ReturnRawInstall(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	macaddress := vars["id"]
+
+	_, err := ValidateMacaddr(macaddress)
+	if err != nil {
+		http.NotFound(w, r)
+	} else {
+
+		store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
+		host, err := store.GetMacaddress(macaddress)
+		if err != nil {
+			log.Fatal(err)
+		}
+		dir := installDir()
+		returnRaw(w, dir, host.Install, extInstall)
+	}
+
+}
+
+func ReturnPreinstall(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	macaddress := vars["id"]
 	if macaddress == "" {
@@ -104,23 +160,69 @@ func ReturnIpxe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
+	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
 	host, err := store.GetMacaddress(macaddress)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if host.Status == "ACTIVE" {
-		renderTemplate(w, host.Template, extIpxe, host)
+		pre := preinstallDir()
+		ValidateTemplates(pre, extPreinstall)
+		tmpl := host.Preinstall + extPreinstall
+		renderTemplate(w, tmpl, host)
 		host.Status = "INSTALLED"
 		host.SaveConfig()
-	} else {
-		http.NotFound(w, r)
-		return
+	} else if host.Status == "INSTALLED" {
+		ip := GetIP(r)
+		log.Errorf("%s requests %s: host is already installed!", ip, macaddress)
+	} else {		
+		ip := GetIP(r)
+		log.Errorf("%s requests %s: not in database!", ip, macaddress)
 
 	}
 }
 
+func ReturnRawPreinstall(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	macaddress := vars["id"]
+
+	_, err := ValidateMacaddr(macaddress)
+	if err != nil {
+		http.NotFound(w, r)
+	} else {
+
+		store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
+		host, err := store.GetMacaddress(macaddress)
+		if err != nil {
+			log.Println(err)
+		}
+
+		dir := preinstallDir()
+		returnRaw(w, dir, host.Preinstall, extPreinstall)
+	}
+}
+
+func ReturnPreviewPreinstall(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	macaddress := vars["id"]
+
+	_, err := ValidateMacaddr(macaddress)
+	if err != nil {
+		http.NotFound(w, r)
+	} else {
+
+		store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
+		host, err := store.GetMacaddress(macaddress)
+		if err != nil {
+			log.Println(err)
+		}
+		pre := preinstallDir()
+		ValidateTemplates(pre, extPreinstall)
+		tmpl := host.Preinstall + extPreinstall
+		renderTemplate(w, tmpl, host)
+	}
+}
 
 func GatherMac(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -132,7 +234,7 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 
 	ValidateMacaddr(macaddress)
 	
-	store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
+	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
 
 	host, err := store.GetActive()
 	if err != nil {
@@ -143,10 +245,10 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 	
 	if macaddress == host.Macaddress {
 		http.NotFound(w, r)
-		log.Errorf("Request from %s to modify %q with macaddress %s to %s DENIED" , ip, host.Name, host.Macaddress, macaddress)
+		log.Errorf("%s requests to modify %q with macaddress %s to %s: DENIED" , ip, host.Name, host.Macaddress, macaddress)
 		return
 	} else {	
-		log.Printf("Request from %s to modify %q with macaddress %s to %s ACCEPTED" , ip, host.Name, host.Macaddress, macaddress)
+		log.Printf("%s requests to modify %q with macaddress %s to %s: ACCEPTED" , ip, host.Name, host.Macaddress, macaddress)
 	}
 
 	host.Macaddress = macaddress
@@ -156,37 +258,58 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 var templates *template.Template
 
 func init() {
-	//filenames := []string{}
 
-	//store := NewStore(os.Getenv("STASIS_STORAGE_PATH"))
+	//templates, err := 
 
-	dirIpxe := ipxeDir()
-	if err := os.MkdirAll(dirIpxe, 0700); err != nil {
+/*	filenames := []string{}
+	paths := []string{}
+	dirPreinstall := preinstallDir()
+	dirGohtml := gohtmlDir()
+	log.Println(dirPreinstall)
+	log.Println(extPreinstall)
+	if err := os.MkdirAll(dirPreinstall, 0700); err != nil {
 		log.Println(err)
 	}
-	ValidateTemplates(dirIpxe, extIpxe)
-
-	dirInstall := installDir()
+	paths := append(paths, preinstallDir(), gohtmlDir())
+	ValidateTemplates(dirPreinstall, extPreinstall)
+	log.Println(filenames)
+	/*dirInstall := installDir()
 	if err := os.MkdirAll(dirInstall, 0700); err != nil {
 		log.Println(err)
 	}
+	ValidateTemplates(dirInstall, extInstall)
+
 	dirPostinstall := postinstallDir()
 	if err := os.MkdirAll(dirPostinstall, 0700); err != nil {
 		log.Println(err)
 	}
+
 	dirGohtml := gohtmlDir()
 	if err := os.MkdirAll(dirGohtml, 0700); err != nil {
 		log.Println(err)
 	}
 	ValidateTemplates(dirGohtml, extGohtml)
 
+	templates, err = template.ParseFiles(filenames...)
+	if err != nil {
+		log.Fatalln(err)
+	}*/
+
 }
 
-func renderTemplate(w http.ResponseWriter, tmpl string, ext string, vars interface{}) {
-	err := templates.ExecuteTemplate(w, tmpl+ext, vars)
+func renderTemplate(w http.ResponseWriter, tmpl string, vars interface{}) {
+	err := templates.ExecuteTemplate(w, tmpl, vars)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func returnRaw(w http.ResponseWriter, dir string, tmpl string, ext string) {
+	raw, err := ioutil.ReadFile(dir + "/" + tmpl + ext)
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Fprintf(w, string(raw))
 }
 
 func GetIP(r *http.Request) string {

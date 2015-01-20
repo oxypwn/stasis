@@ -15,12 +15,17 @@ import (
 	_ "github.com/pandrew/stasis/drivers/none"
 )
 
+
 type hostListItem struct {
 	Name       string
 	Active     bool
+	Preinstall   string
+	Install    string
 	Status     string
+	Append     string
 	DriverName string
 	Macaddress string
+	Test       string
 }
 
 type hostListItemByName []hostListItem
@@ -43,89 +48,86 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 		log.Debugf("error determining whether host %q is active: %s",
 			host.Name, err)
 	}
+	isTest := ""
+	if isActive {
+		isTest = "SELECTED"
+	}
 
 	hostListItems <- hostListItem{
 		Name:       host.Name,
 		Active:     isActive,
+		Preinstall:	host.Preinstall,
+		Install:	host.Install,
 		DriverName: host.Driver.DriverName(),
 		Status:		host.Status,
 		Macaddress: host.Macaddress,
+		Test: 		isTest,
 	}
 }
 
 var Commands = []cli.Command{
 	{
-		Flags: append(
-			drivers.GetCreateFlags(),
-		cli.StringFlag{
-			Name: "driver, d",
-			Usage: fmt.Sprintf(
-				"Driver to create machine with. Available drivers: %s",
-				strings.Join(drivers.GetDriverNames(), ", "),
-			),
-			Value: "none",
-		},
-  		cli.StringFlag{
-    		Name: "mac",
-    		Value: "",
-    		Usage: "Mac address to use, Example: 00-00-00-00-00-00",
-  		},
-  		cli.StringFlag{
-    		Name: "template",
-    		Value: "",
-    		Usage: "iPxe template",
-  		},
-  		cli.StringFlag{
-    		Name: "append",
-    		Value: "",
-    		Usage: "Append string",
-  		},
-  		cli.StringFlag{
-    		Name: "mirror",
-    		Value: "localhost",
-    		Usage: "Location for static content",
-    		EnvVar: "STASIS_HTTP_MIRROR",
-  		},
-  		 cli.StringFlag{
-    		Name: "kernel",
-    		Value: "",
-    		Usage: "Kernel string",
-  		},
-  		cli.StringFlag{
-    		Name: "initrd",
-    		Value: "",
-    		Usage: "Initrd string",
-  		},
-  		cli.StringFlag{
-    		Name: "status",
-    		Value: "INACTIVE",
-    		Usage: "Initial status of machine",
-  		},
-  	),
-		Name:  "create",
-		Usage: "Create a machine",
-		Action: cmdCreate,
-	},
-	{
-		Name:  "inspect",
-		Usage: "Inspect information about a machine",
-		Action: cmdInspect,
-	},
-	{
-		Name:  "toggle",
-		Usage: "Toggles hosts status between INACTIVE and ACTIVE ",
-		Action: cmdToggle,
-	},
-	{
-		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  "quiet, q",
-				Usage: "Enable quiet mode",
+		Name: "host",
+		ShortName: "H",
+		Usage: "Work with hosts",
+		Subcommands: []cli.Command{
+			{
+				Flags: append(
+				drivers.GetCreateFlags(),
+				preinstall,
+				preinstallMac,
+				preinstallKernel,
+				preinstallInitrd,
+				preinstallAppend,
+				install,
+				installWindowsKey,
+				cli.StringFlag{
+					Name: "driver, d",
+					Usage: fmt.Sprintf(
+						"Driver to create machine with. Available drivers: %s",
+						strings.Join(drivers.GetDriverNames(), ", "),
+					),
+					Value: "none",
+				},
+		  		cli.StringFlag{
+		    		Name: "mirror",
+		    		Value: "localhost",
+		    		Usage: "Location for static content",
+		    		EnvVar: "STASIS_HTTP_MIRROR",
+		    	},
+		  		cli.StringFlag{
+		    		Name: "status",
+		    		Value: "INACTIVE",
+		    		Usage: "Initial status of machine",
+		  		},
+		  	),
+				Name:  "create",
+				ShortName: "c",
+				Usage: "Create a host",
+				Action: cmdCreateHost,
+			},
+			{
+				Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "quiet, q",
+					Usage: "Enable quiet mode",
+					},
+				},
+				Name:  "ls",
+				Usage: "List machines",
+				Action: cmdLs,
+			},
+			{
+				Name:  "inspect",
+				Usage: "Inspect information about a machine",
+				Action: cmdInspect,
+			},
+			{
+				Name:  "toggle",
+				Usage: "Toggles hosts status between INACTIVE and ACTIVE ",
+				Action: cmdToggle,
 			},
 		},
-		Name:  "ls",
-		Usage: "List machines",
-		Action: cmdLs,
 	},
 	{
 		Flags: []cli.Flag {
@@ -141,13 +143,20 @@ var Commands = []cli.Command{
   		},
   	},
 		Name: "listen",
+		ShortName: "l",
 		Usage: "Listens on port",
 		Action: cmdListen,
 	},
 	{
 		Name: "template",
 		Usage: "List templates",
-		Action: cmdListTemplates,
+		Subcommands: []cli.Command{
+    		{
+       			Name:  "ls",
+        		Usage: "list templates",
+        		Action: cmdListTemplates,
+      		},
+		},
 	},
 }
 
@@ -170,10 +179,12 @@ func cmdInspect(c *cli.Context) {
 	fmt.Println(string(prettyJSON))
 }
 
-func cmdCreate(c *cli.Context) {
+func cmdCreateHost(c *cli.Context) {
 	driver := c.String("driver")
 	mac := c.String("mac")
-	template := c.String("template")
+	preinstall := c.String("preinstall")
+	install := c.String("install")
+	windowsKey := c.String("windows-key")
 	append := c.String("append")
 	mirror := c.String("mirror")
 	os.Setenv("STASIS_HTTP_MIRROR", mirror)
@@ -196,15 +207,15 @@ func cmdCreate(c *cli.Context) {
 	}
 
 
-	if template == "" {
-		log.Errorf("Misisng --template option")
+	if preinstall == "" {
+		log.Errorf("Misisng --preinstall option")
 		os.Exit(1)
 	}
 
-	store := NewStore(c.GlobalString("storage-path"))
+	store := NewHostStore(c.GlobalString("storage-path"))
 
 
-	host, err := store.Create(name, driver, mac, template, append, mirror, kernel, initrd, status, c)
+	host, err := store.CreateHost(name, driver, mac, preinstall, install, windowsKey, append, mirror, kernel, initrd, status, c)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -244,7 +255,7 @@ func cmdGather(c *cli.Context) {
 */
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
-	store := NewStore(c.GlobalString("storage-path"))
+	store := NewHostStore(c.GlobalString("storage-path"))
 
 	hostList, err := store.List()
 	if err != nil {
@@ -292,7 +303,7 @@ func cmdListen(c *cli.Context) {
 	gather := c.Bool("gather")
 	//store := NewStore()
 	os.Setenv("STASIS_HTTP_PORT", c.String("port"))
-	store := NewStore(c.GlobalString("storage-path"))
+	store := NewHostStore(c.GlobalString("storage-path"))
 	_, err := os.Stat(store.Path)
 	if os.IsNotExist(err) {
 		log.Errorf("There is no machines or location to store them.")
@@ -323,12 +334,19 @@ func cmdListen(c *cli.Context) {
 }
 
 func cmdListTemplates(c *cli.Context) {
-	path := ipxeDir()
-	listTemplates(path)
+	preinstall := preinstallDir()
+	install := installDir()
+	var paths []string
+	paths = append(paths, preinstall, install)
+
+	for _, path := range paths {
+		listTemplates(path)
+	}
+
 }
 func getHost(c *cli.Context) *Host {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"))
+	store := NewHostStore(c.GlobalString("storage-path"))
 
 	if name == "" {
 		host, err := store.GetActive()

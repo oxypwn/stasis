@@ -14,7 +14,6 @@ func ValidateHostName(name string) (string, error) {
 	validHostNamePattern := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 	if !validHostNamePattern.MatchString(name) {
 		log.Errorf("Invalid host name %q, it must match %s", name, validHostNamePattern)
-		os.Exit(1)
 	}
 	return name, nil
 }
@@ -22,17 +21,17 @@ func ValidateHostName(name string) (string, error) {
 func ValidateMacaddr(mac string) (string, error) {
 	validMacaddrPattern := regexp.MustCompile(`^([0-9a-fA-F]{2}[-]){5}([0-9a-fA-F]{2})+$`)
 	if !validMacaddrPattern.MatchString(mac) {
-		log.Errorf("Invalid mac address %q, it must match %s", mac, validMacaddrPattern)
-		os.Exit(1)
-	} 
+		return mac, fmt.Errorf("Invalid mac address %q, it must match %s", mac, validMacaddrPattern)
+
+	}
 	return mac, nil
 }
 
 func ValidateTemplates(path, extension string) {
 	filenames := []string{}
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-	if !info.IsDir() && filepath.Ext(path) == extension {
-		filenames = append(filenames, path)
+		if !info.IsDir() && filepath.Ext(path) == extension {
+			filenames = append(filenames, path)
 		}
 		return nil
 	})
@@ -42,7 +41,7 @@ func ValidateTemplates(path, extension string) {
 	}
 
 	if len(filenames) == 0 {
-		log.Errorf("There is no ipxe templates in: %q", path)
+		log.Errorf("There is no %s templates in: %q", extension, path)
 		os.Exit(1)
 	}
 
@@ -51,6 +50,7 @@ func ValidateTemplates(path, extension string) {
 		log.Fatalln(err)
 	}
 }
+
 
 func listTemplates(path string) {
 	files, _ := ioutil.ReadDir(path)

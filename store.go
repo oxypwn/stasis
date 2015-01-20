@@ -18,15 +18,27 @@ type Store struct {
 	Path string
 }
 
-func NewStore(rootPath string) *Store {
+func NewHostStore(rootPath string) *Store {
 	if rootPath == "" {
 		rootPath = filepath.Join(drivers.GetHomeDir(), ".stasis", "machines")
-		os.Setenv("STASIS_STORAGE_PATH", rootPath)
+		os.Setenv("STASIS_HOST_STORAGE_PATH", rootPath)
 	}
 	return &Store{Path: rootPath}
 }
 
-func (s *Store) Create(name, driverName, mac, template, append, mirror, kernel, initrd, status string, flags drivers.DriverOptions) (*Host, error) {
+func (s *Store) CreateHost(
+	name,
+	driverName,
+	mac,
+	preinstall,
+	install,
+	windowsKey,
+	append,
+	mirror,
+	kernel, 
+	initrd, 
+	status string, 
+	flags drivers.DriverOptions) (*Host, error) {
 	exists, err := s.Exists(name)
 	if err != nil {
 		return nil, err
@@ -38,7 +50,19 @@ func (s *Store) Create(name, driverName, mac, template, append, mirror, kernel, 
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, driverName, mac, template, append, mirror, kernel, initrd, status, hostPath)
+	host, err := NewHost(
+		name, 
+		driverName, 
+		mac, 
+		preinstall, 
+		install,
+		windowsKey,
+		append, 
+		mirror, 
+		kernel, 
+		initrd, 
+		status, 
+		hostPath)
 	if err != nil {
 		return host, err
 	}
@@ -75,8 +99,6 @@ func (s *Store) GetMacaddress(macaddress string) (*Host, error) {
 			host, err := s.Load(file.Name())
 			if host.Macaddress == macaddress {
 				return host, nil
-			} else if host.Macaddress != macaddress {
-				log.Errorf("no match")		
 			} else if err != nil {
 				log.Errorf("error loading host %q: %s", file.Name(), err)
 				continue

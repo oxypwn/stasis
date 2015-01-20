@@ -17,7 +17,9 @@ type Host struct {
 	DriverName string
 	Driver     drivers.Driver
 	Macaddress string
-	Template    string
+	Preinstall    string
+	Install     string
+	WindowsKey string
 	Append		string
 	Mirror		string
 	Kernel		string
@@ -30,7 +32,19 @@ type hostConfig struct {
 	DriverName string
 }
 
-func NewHost(name, driverName, mac, template, append, mirror, kernel, initrd, status, storePath string) (*Host, error) {
+func NewHost(
+	name, 
+	driverName, 
+	mac, 
+	preinstall, 
+	install,
+	windowsKey, 
+	append, 
+	mirror, 
+	kernel, 
+	initrd, 
+	status, 
+	storePath string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, storePath)
 	if err != nil {
 		return nil, err
@@ -42,7 +56,9 @@ func NewHost(name, driverName, mac, template, append, mirror, kernel, initrd, st
 		DriverName:	driverName,
 		Driver:		driver,
 		Macaddress:	mac,
-		Template:	template,
+		Preinstall:	preinstall,
+		Install:    install,
+		WindowsKey:     windowsKey,
 		Append:		append,
 		Mirror:		mirror,
 		Kernel:		kernel,
