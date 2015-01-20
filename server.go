@@ -11,7 +11,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/pandrew/stasis/drivers"
-	"github.com/pandrew/stasis/gohtml"
 )
 
 const (
