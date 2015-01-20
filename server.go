@@ -99,7 +99,6 @@ func ReturnStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	close(hostListItems)
-	log.Println(gohtml.index)
 	templates, err := template.New("stats").Parse(index)
 	if err != nil {
         panic(err)
