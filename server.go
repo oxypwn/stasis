@@ -62,6 +62,7 @@ func initRouter(gather bool) {
 //	r.HandleFunc("/v1/{id}/install", ReturnInstall)
 //	r.HandleFunc("/v1/{id}/install/raw", ReturnRawInstall)
 	r.HandleFunc("/v1/info/stats", ReturnStats)
+	r.HandleFunc("/v1/{id}/toggle", ReturnToggle)
 	if gather {
 		r.HandleFunc("/v1/{id}/announce", GatherMac)
 	}
@@ -221,6 +222,31 @@ func ReturnPreviewPreinstall(w http.ResponseWriter, r *http.Request) {
 		tmpl := host.Preinstall + extPreinstall
 		renderTemplate(w, tmpl, host)
 	}
+}
+
+func ReturnToggle(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	macaddress := vars["id"]
+	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
+	host, err := store.GetMacaddress(macaddress)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(host)
+	if host.Status == "INACTIVE" {
+		host.Status = "ACTIVE"
+		log.Infof("%s is now ACTIVE", host.Name)
+	} else if host.Status == "INSTALLED" {
+		host.Status = "ACTIVE"
+		log.Infof("%s is now ACTIVE", host.Name)
+	} else {
+		host.Status = "INACTIVE"
+		log.Infof("%s is now INATIVE", host.Name)
+	}
+
+	host.SaveConfig()
+	http.Redirect(w, r, "/v1/info/stats", http.StatusFound)
+
 }
 
 func GatherMac(w http.ResponseWriter, r *http.Request) {

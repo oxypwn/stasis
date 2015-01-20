@@ -50,7 +50,7 @@ const index = `
 
   <body>
 
-          <h2 class="sub-header">Host Status</h2>
+          <h2 class="sub-header">Status:Hosts</h2>
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>
@@ -74,16 +74,20 @@ const index = `
 			                 <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
                        <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/preview"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
                     </div> 
-		    </td>
+		               </td>
                   <td>{{.Install}}  
-			</div>
-			<div class="btn-group btn-group-xs" role="group" aria-label="...">
-  				<a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
-				<a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/raw"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
-			</div>
-		  </td>
-		  <td>none</td>
-		  <td><span class="label label-{{.Status}}">{{.Status}}</span></td>
+		            	  <div class="btn-group btn-group-xs" role="group" aria-label="...">
+  		        		    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+				              <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/raw"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
+			             </div>
+		              </td>
+		             <td>none</td>
+		            <td>
+                <span class="label label-{{.Status}}">{{.Status}}</span> 
+                  <div class="btn-group btn-group-xs" role="group" aria-label="...">
+                    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/toggle"><span class="glyphicon glyphicon-retweet" aria-hidden="true"></span></a>
+                  </div>
+                </td>
                   <td>{{.Macaddress}}</td>
                 </tr>
               {{end}}
