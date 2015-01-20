@@ -1,4 +1,4 @@
-package gohtml
+package main
 
 const index = `
 
