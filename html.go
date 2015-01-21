@@ -59,7 +59,6 @@ const index = `
                   <th>Target</th>
                   <th>Preinstall</th>
 		  <th>Install</th>
-	          <th>Postinstall</th>
                   <th>Status</th>
                   <th>Macaddress</th>
                 </tr>
@@ -77,11 +76,10 @@ const index = `
 		               </td>
                   <td>{{.Install}}  
 		            	  <div class="btn-group btn-group-xs" role="group" aria-label="...">
-  		        		    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
-				              <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/raw"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
+  		        		    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/install/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+				              <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/install"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
 			             </div>
 		              </td>
-		             <td>none</td>
 		            <td>
                 <span class="label label-{{.Status}}">{{.Status}}</span> 
                   <div class="btn-group btn-group-xs" role="group" aria-label="...">

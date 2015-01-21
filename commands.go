@@ -21,6 +21,7 @@ type hostListItem struct {
 	Active     bool
 	Preinstall   string
 	Install    string
+	Postinstall string
 	Status     string
 	Append     string
 	DriverName string
@@ -80,7 +81,10 @@ var Commands = []cli.Command{
 				preinstallInitrd,
 				preinstallAppend,
 				install,
+				installUsername,
+				installPassword,
 				installWindowsKey,
+				postinstall,
 				cli.StringFlag{
 					Name: "driver, d",
 					Usage: fmt.Sprintf(
@@ -91,7 +95,7 @@ var Commands = []cli.Command{
 				},
 		  		cli.StringFlag{
 		    		Name: "mirror",
-		    		Value: "localhost",
+		    		Value: "boot:8080",
 		    		Usage: "Location for static content",
 		    		EnvVar: "STASIS_HTTP_MIRROR",
 		    	},
@@ -184,6 +188,9 @@ func cmdCreateHost(c *cli.Context) {
 	mac := c.String("mac")
 	preinstall := c.String("preinstall")
 	install := c.String("install")
+	username := c.String("username")
+	password := c.String("password")
+	postinstall := c.String("postinstall")
 	windowsKey := c.String("windows-key")
 	append := c.String("append")
 	mirror := c.String("mirror")
@@ -215,7 +222,7 @@ func cmdCreateHost(c *cli.Context) {
 	store := NewHostStore(c.GlobalString("storage-path"))
 
 
-	host, err := store.CreateHost(name, driver, mac, preinstall, install, windowsKey, append, mirror, kernel, initrd, status, c)
+	host, err := store.CreateHost(name, driver, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, c)
 	if err != nil {
 		log.Fatal(err)
 	}

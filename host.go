@@ -19,6 +19,9 @@ type Host struct {
 	Macaddress string
 	Preinstall    string
 	Install     string
+	Username	string
+	Password	string
+	Postinstall string
 	WindowsKey string
 	Append		string
 	Mirror		string
@@ -38,6 +41,9 @@ func NewHost(
 	mac, 
 	preinstall, 
 	install,
+	username,
+	password,
+	postinstall,
 	windowsKey, 
 	append, 
 	mirror, 
@@ -58,6 +64,9 @@ func NewHost(
 		Macaddress:	mac,
 		Preinstall:	preinstall,
 		Install:    install,
+		Username:   username,
+		Password:	password,
+		Postinstall: postinstall,
 		WindowsKey:     windowsKey,
 		Append:		append,
 		Mirror:		mirror,

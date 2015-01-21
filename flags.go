@@ -10,9 +10,16 @@ var (
 		Value: "",
 		Usage: "kickstart/preinstall template",
 	}
-)
-
-var (
+	installUsername = cli.StringFlag{
+		Name: "username",
+		Value: "vagrant",
+		Usage: "username",
+	}
+	installPassword = cli.StringFlag{
+		Name: "password",
+		Value: "vagrant",
+		Usage: "username",
+	}
 	installWindowsKey = cli.StringFlag{
 		Name: "windows-key",
 		Value: "",
@@ -49,4 +56,13 @@ var (
 		Value: "",
 		Usage: "Initrd string",
 	}
+)
+
+var (
+	postinstall = cli.StringFlag{
+		Name: "postinstall",
+		Value: "",
+		Usage: "Uri to script to execute after installation.",
+	}
+	
 )

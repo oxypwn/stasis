@@ -59,8 +59,8 @@ func initRouter(gather bool) {
 	r.HandleFunc("/v1/{id}/preinstall", ReturnPreinstall)
 	r.HandleFunc("/v1/{id}/preinstall/raw", ReturnRawPreinstall)
 	r.HandleFunc("/v1/{id}/preinstall/preview", ReturnPreviewPreinstall)
-//	r.HandleFunc("/v1/{id}/install", ReturnInstall)
-//	r.HandleFunc("/v1/{id}/install/raw", ReturnRawInstall)
+	r.HandleFunc("/v1/{id}/install", ReturnInstall)
+	r.HandleFunc("/v1/{id}/install/raw", ReturnRawInstall)
 	r.HandleFunc("/v1/info/stats", ReturnStats)
 	r.HandleFunc("/v1/{id}/toggle", ReturnToggle)
 	if gather {
@@ -125,7 +125,8 @@ func ReturnInstall(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//var tmpl string
+		inst := installDir()
+		ValidateTemplates(inst, extInstall)
 		tmpl := host.Install + extInstall
 		renderTemplate(w, tmpl, host)
 	}
