@@ -32,7 +32,7 @@ func gohtmlDir() string {
 }
 
 func installDir() string {
-	return filepath.Join(drivers.GetHomeDir(), ".stasis", "install")
+	return filepath.Join(GetStasisDir(), "install")
 }
 
 func postinstallDir() string {
@@ -49,6 +49,18 @@ func DirExists(dir string) (bool, error) {
 	return false, err
 }
 
+func init() {
+	dirInstall := installDir()
+	pathExist, _ := DirExists(dirInstall) 
+	if !pathExist {
+		if err := os.MkdirAll(dirInstall, 0700); err != nil {
+			log.Println(err)
+		}
+	}
+
+
+		
+}
 
 
 
@@ -125,10 +137,17 @@ func ReturnInstall(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		inst := installDir()
-		ValidateTemplates(inst, extInstall)
-		tmpl := host.Install + extInstall
-		renderTemplate(w, tmpl, host)
+		//inst := installDir()
+		//ValidateTemplates(inst, extInstall)
+		//test := host.Install
+		if len(host.Install) != 0 {
+			tmpl := host.Install + extInstall
+			renderTemplate(w, tmpl, host)
+		} else {
+			http.NotFound(w, r)
+
+		}
+
 	}
 
 }
@@ -147,8 +166,12 @@ func ReturnRawInstall(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		dir := installDir()
-		returnRaw(w, dir, host.Install, extInstall)
+		if len(host.Install) != 0 {
+			dir := installDir()
+			returnRaw(w, dir, host.Install, extInstall)
+		} else {
+			http.NotFound(w, r)
+		}
 	}
 
 }

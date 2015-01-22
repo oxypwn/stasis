@@ -33,7 +33,7 @@ func ValidateTemplates(path, extension string) {
 		if !info.IsDir() && filepath.Ext(path) == extension {
 			filenames = append(filenames, path)
 		}
-		return nil
+		return err
 	})
 
 	if err != nil {

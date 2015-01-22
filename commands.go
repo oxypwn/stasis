@@ -96,7 +96,7 @@ var Commands = []cli.Command{
 		  		cli.StringFlag{
 		    		Name: "mirror",
 		    		Value: "boot:8080",
-		    		Usage: "Location for static content",
+		    		Usage: "hostname/ip to stasis",
 		    		EnvVar: "STASIS_HTTP_MIRROR",
 		    	},
 		  		cli.StringFlag{
