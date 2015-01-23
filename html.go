@@ -86,7 +86,11 @@ const index = `
                     <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/toggle"><span class="glyphicon glyphicon-retweet" aria-hidden="true"></span></a>
                   </div>
                 </td>
-                  <td>{{.Macaddress}}</td>
+                  <td>{{.Macaddress}} 
+                  <div class="btn-group btn-group-xs" role="group" aria-label="...">
+                    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/inspect"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+                  </div>
+                  </td>
                 </tr>
               {{end}}
               </tbody>

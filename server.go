@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"net"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"io/ioutil"
@@ -68,6 +69,7 @@ func initRouter(gather bool) {
 	r := mux.NewRouter()
 	// Prepend uri with v1 for version 1 api. This will help error responds
 	// when using relative paths in links.
+	r.HandleFunc("/v1/{id}/inspect", ReturnInspect)
 	r.HandleFunc("/v1/{id}/preinstall", ReturnPreinstall)
 	r.HandleFunc("/v1/{id}/preinstall/raw", ReturnRawPreinstall)
 	r.HandleFunc("/v1/{id}/preinstall/preview", ReturnPreviewPreinstall)
@@ -89,6 +91,28 @@ func initRouter(gather bool) {
 
 	log.Println("Listening...")
 	http.ListenAndServe(":"+os.Getenv("STASIS_HTTP_PORT"), nil)
+}
+
+func ReturnInspect(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	macaddress := vars["id"]
+
+	_, err := ValidateMacaddr(macaddress)
+	if err != nil {
+		http.NotFound(w, r)
+	} else {
+		store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
+		host, err := store.GetMacaddress(macaddress)
+		if err != nil {
+			log.Fatal(err)
+		}
+		prettyJSON, err := json.MarshalIndent(host, "", "    ")
+		if err != nil {
+			log.Fatal(err)
+		}
+		//log.Println(getHost(c))
+		fmt.Fprintf(w, string(prettyJSON))
+	}
 }
 
 func ReturnStats(w http.ResponseWriter, r *http.Request) {
