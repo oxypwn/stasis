@@ -2,6 +2,7 @@ package main
 
 import (
   "os"
+  "path"
   "github.com/codegangsta/cli"
   log "github.com/Sirupsen/logrus"
 
@@ -22,6 +23,8 @@ func main() {
 
 
 	app := cli.NewApp()
+	app.Name = path.Base(os.Args[0])
+	app.Usage = "Create and serve installation instructions"
 	app.Commands = Commands
 	app.CommandNotFound = cmdNotFound
 	app.Version = VERSION

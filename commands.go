@@ -314,7 +314,7 @@ func cmdListen(c *cli.Context) {
 	_, err := os.Stat(store.Path)
 	if os.IsNotExist(err) {
 		log.Errorf("There is no machines or location to store them.")
-		cli.ShowCommandHelp(c, "create")
+		cli.ShowCommandHelp(c, "H c")
 		os.Exit(1)	
 	} else if err == nil {
 		if gather {
