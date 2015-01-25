@@ -26,22 +26,7 @@ func NewHostStore(rootPath string) *Store {
 	return &Store{Path: rootPath}
 }
 
-func (s *Store) CreateHost(
-	name,
-	driverName,
-	mac,
-	preinstall,
-	install,
-	username,
-	password,
-	postinstall,
-	windowsKey,
-	append,
-	mirror,
-	kernel, 
-	initrd, 
-	status string, 
-	flags drivers.DriverOptions) (*Host, error) {
+func (s *Store) CreateHost(name, driverName, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status string, announce bool, flags drivers.DriverOptions) (*Host, error) {
 	exists, err := s.Exists(name)
 	if err != nil {
 		return nil, err
@@ -53,22 +38,7 @@ func (s *Store) CreateHost(
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(
-		name, 
-		driverName, 
-		mac, 
-		preinstall, 
-		install,
-		username,
-		password,
-		postinstall,
-		windowsKey,
-		append, 
-		mirror, 
-		kernel, 
-		initrd, 
-		status, 
-		hostPath)
+	host, err := NewHost(name, driverName, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, hostPath, announce)
 	if err != nil {
 		return host, err
 	}
@@ -103,11 +73,18 @@ func (s *Store) GetMacaddress(macaddress string) (*Host, error) {
 	for _, file := range dir {
 		if file.IsDir() {
 			host, err := s.Load(file.Name())
-			if host.Macaddress == macaddress {
-				return host, nil
-			} else if err != nil {
-				log.Errorf("error loading host %q: %s", file.Name(), err)
-				continue
+			isActive, err := s.IsActive(host)
+			if err != nil {
+				log.Debugf("error determining whether host %q is active: %s",
+				host.Name, err)
+			}
+			if isActive {
+				if host.Macaddress == macaddress {
+					return host, nil
+				} else if err != nil {
+					log.Errorf("error loading host %q: %s", file.Name(), err)
+					continue
+				}
 			}
 		}
 	}
@@ -178,7 +155,7 @@ func (s *Store) IsActive(host *Host) (bool, error) {
 func (s *Store) GetActive() (*Host, error) {
 	hostName, err := ioutil.ReadFile(s.activePath())
 	if os.IsNotExist(err) {
-		return nil, nil
+		return nil, err
 	} else if err != nil {
 		return nil, err
 	}

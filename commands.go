@@ -26,7 +26,6 @@ type hostListItem struct {
 	Append     string
 	DriverName string
 	Macaddress string
-	Test       string
 }
 
 type hostListItemByName []hostListItem
@@ -49,10 +48,6 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 		log.Debugf("error determining whether host %q is active: %s",
 			host.Name, err)
 	}
-	isTest := ""
-	if isActive {
-		isTest = "SELECTED"
-	}
 
 	hostListItems <- hostListItem{
 		Name:       host.Name,
@@ -62,7 +57,6 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 		DriverName: host.Driver.DriverName(),
 		Status:		host.Status,
 		Macaddress: host.Macaddress,
-		Test: 		isTest,
 	}
 }
 
@@ -213,6 +207,7 @@ func cmdCreateHost(c *cli.Context) {
 		ValidateMacaddr(mac)
 	}
 
+	announce := false
 
 	if preinstall == "" {
 		log.Errorf("Misisng --preinstall option")
@@ -222,7 +217,7 @@ func cmdCreateHost(c *cli.Context) {
 	store := NewHostStore(c.GlobalString("storage-path"))
 
 
-	host, err := store.CreateHost(name, driver, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, c)
+	host, err := store.CreateHost(name, driver, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, announce, c)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -260,6 +255,7 @@ func cmdGather(c *cli.Context) {
 		initRouter()
 }
 */
+
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
 	store := NewHostStore(c.GlobalString("storage-path"))
@@ -335,7 +331,7 @@ func cmdListen(c *cli.Context) {
 				}
 			}
 		} 
-		initRouter(gather)
+		initRouter()
 	
 	}
 }

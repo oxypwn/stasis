@@ -29,6 +29,8 @@ type Host struct {
 	Initrd		string
 	Status		string 
 	storePath  string
+	Announce    bool
+
 }
 
 type hostConfig struct {
@@ -48,9 +50,10 @@ func NewHost(
 	append, 
 	mirror, 
 	kernel, 
-	initrd, 
+	initrd,
 	status, 
-	storePath string) (*Host, error) {
+	storePath string,
+	announce bool) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, storePath)
 	if err != nil {
 		return nil, err
@@ -73,6 +76,7 @@ func NewHost(
 		Kernel:		kernel,
 		Initrd:		initrd,
 		Status:		status,
+		Announce:	announce,
 		storePath:  storePath,
 	}, nil
 }

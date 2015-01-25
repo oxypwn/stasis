@@ -65,7 +65,7 @@ func init() {
 
 
 
-func initRouter(gather bool) {
+func initRouter() {
 	r := mux.NewRouter()
 	// Prepend uri with v1 for version 1 api. This will help error responds
 	// when using relative paths in links.
@@ -76,10 +76,9 @@ func initRouter(gather bool) {
 	r.HandleFunc("/v1/{id}/install", ReturnInstall)
 	r.HandleFunc("/v1/{id}/install/raw", ReturnRawInstall)
 	r.HandleFunc("/v1/info/stats", ReturnStats)
-	r.HandleFunc("/v1/{id}/toggle", ReturnToggle)
-	if gather {
-		r.HandleFunc("/v1/{id}/announce", GatherMac)
-	}
+	r.HandleFunc("/v1/{id}/toggle", toggle)
+	r.HandleFunc("/v1/{id}/announce", GatherMac)
+	r.HandleFunc("/v1/{id}/select", Select)
 	http.Handle("/", r)
 
 	port := os.Getenv("STASIS_HTTP_PORT")
@@ -214,19 +213,31 @@ func ReturnPreinstall(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	if host.Status == "ACTIVE" {
-		pre := preinstallDir()
-		ValidateTemplates(pre, extPreinstall)
-		tmpl := host.Preinstall + extPreinstall
-		renderTemplate(w, tmpl, host)
-		host.Status = "INSTALLED"
-		host.SaveConfig()
-	} else if host.Status == "INSTALLED" {
+	active, err := store.GetActive()
+	if err != nil {
+		log.Println(err)
+	}
+
+	if host.Name == active.Name {
+		if host.Status == "ACTIVE" {
+			pre := preinstallDir()
+			ValidateTemplates(pre, extPreinstall)
+
+			tmpl := host.Preinstall + extPreinstall
+			renderTemplate(w, tmpl, host)
+
+			host.Status = "INSTALLED"
+			host.SaveConfig()
+		} else if host.Status == "INSTALLED" {
+			ip := GetIP(r)
+			log.Errorf("%s requests %s: host is already installed!", ip, macaddress)
+		} else {		
+			ip := GetIP(r)
+			log.Errorf("%s requests %s: not in database!", ip, macaddress)
+		}
+	} else {
 		ip := GetIP(r)
-		log.Errorf("%s requests %s: host is already installed!", ip, macaddress)
-	} else {		
-		ip := GetIP(r)
-		log.Errorf("%s requests %s: not in database!", ip, macaddress)
+		log.Errorf("%s requests %s: Host does not match selected!", ip, macaddress)
 
 	}
 }
@@ -272,30 +283,7 @@ func ReturnPreviewPreinstall(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ReturnToggle(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	macaddress := vars["id"]
-	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
-	host, err := store.GetMacaddress(macaddress)
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println(host)
-	if host.Status == "INACTIVE" {
-		host.Status = "ACTIVE"
-		log.Infof("%s is now ACTIVE", host.Name)
-	} else if host.Status == "INSTALLED" {
-		host.Status = "ACTIVE"
-		log.Infof("%s is now ACTIVE", host.Name)
-	} else {
-		host.Status = "INACTIVE"
-		log.Infof("%s is now INATIVE", host.Name)
-	}
 
-	host.SaveConfig()
-	http.Redirect(w, r, "/v1/info/stats", http.StatusFound)
-
-}
 
 func GatherMac(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -308,7 +296,7 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 	ValidateMacaddr(macaddress)
 	
 	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
-
+	// Locate the host
 	host, err := store.GetActive()
 	if err != nil {
 		log.Println(err)
@@ -320,16 +308,69 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		log.Errorf("%s requests to modify %q with macaddress %s to %s: DENIED" , ip, host.Name, host.Macaddress, macaddress)
 		return
-	} else {	
-		log.Printf("%s requests to modify %q with macaddress %s to %s: ACCEPTED" , ip, host.Name, host.Macaddress, macaddress)
-	}
+	} else {
+		if host.Announce {	
+			log.Printf("%s requests to modify %q with macaddress %s to %s: ACCEPTED" , ip, host.Name, host.Macaddress, macaddress)
 
-	host.Macaddress = macaddress
-	host.SaveConfig()
+			host.Macaddress = macaddress
+			host.Announce = false
+			host.SaveConfig()
+		}
+	}
 }
 
 var templates *template.Template
 
+func toggle(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	hostname := vars["id"]
+	//macaddress := vars["id"]
+	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
+	host, err := store.Load(hostname)
+	if err != nil {
+		log.Println(err)
+	}
+	
+	log.Println(host)
+	if host.Announce == false {
+		host.Announce = true
+		host.Status = "ACTIVE"
+		log.Infof("%s is now true", host.Name)
+	} else if host.Announce == true {
+		host.Announce = false
+		host.Status = "INACTIVE"
+		log.Infof("%s is now false", host.Name)
+	} else {
+		host.Announce = false
+		host.Status = "INSTALLED"
+		log.Infof("%s is now INSTALLED", host.Name)
+
+	}
+
+	host.SaveConfig()
+	http.Redirect(w, r, "/v1/info/stats", http.StatusFound)
+
+
+}
+
+func Select(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	hostname := vars["id"]
+	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
+	host, _ := store.Load(hostname)
+
+	host, err := store.Load(hostname)
+	if err != nil {
+		log.Println(host)
+	}
+
+	store.SetActive(host)
+
+		
+	http.Redirect(w, r, "/v1/info/stats", http.StatusFound)
+
+
+}
 
 func renderTemplate(w http.ResponseWriter, tmpl string, vars interface{}) {
 	err := templates.ExecuteTemplate(w, tmpl, vars)

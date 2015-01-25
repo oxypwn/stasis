@@ -52,22 +52,20 @@ const index = `
 
           <h2 class="sub-header">Status:Hosts</h2>
           <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-condensed">
               <thead>
                 <tr>
                   <th>Hostname</th>
-                  <th>Target</th>
                   <th>Preinstall</th>
-		  <th>Install</th>
+		              <th>Install</th>
                   <th>Status</th>
                   <th>Macaddress</th>
                 </tr>
               </thead>
               <tbody>
               {{range.}}
-                <tr>
+                <tr class="{{if .Active}}active{{end}}">
                   <td>{{.Name}}</td>
-                  <td>{{.Test}}</td>
                   <td>{{.Preinstall}} 
                     <div class="btn-group btn-group-xs" role="group" aria-label="...">
 			                 <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
@@ -83,11 +81,12 @@ const index = `
 		            <td>
                 <span class="label label-{{.Status}}">{{.Status}}</span> 
                   <div class="btn-group btn-group-xs" role="group" aria-label="...">
-                    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/toggle"><span class="glyphicon glyphicon-retweet" aria-hidden="true"></span></a>
+                    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Name}}/toggle"><span class="glyphicon glyphicon-retweet" aria-hidden="true"></span></a>
                   </div>
                 </td>
                   <td>{{.Macaddress}} 
                   <div class="btn-group btn-group-xs" role="group" aria-label="...">
+                    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Name}}/select"><span class="glyphicon glyphicon-star" aria-hidden="true"></span></a>
                     <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/inspect"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
                   </div>
                   </td>
