@@ -50,7 +50,7 @@ const index = `
 
   <body>
 
-          <h2 class="sub-header">Status:Hosts</h2>
+          <h2 class="sub-header">Hosts</h2>
           <div class="table-responsive">
             <table class="table table-condensed">
               <thead>
@@ -64,7 +64,7 @@ const index = `
               </thead>
               <tbody>
               {{range.}}
-                <tr class="{{if .Active}}active{{end}}">
+                <tr class="{{if .Active}}info{{end}}">
                   <td>{{.Name}}</td>
                   <td>{{.Preinstall}} 
                     <div class="btn-group btn-group-xs" role="group" aria-label="...">
@@ -86,7 +86,7 @@ const index = `
                 </td>
                   <td>{{.Macaddress}} 
                   <div class="btn-group btn-group-xs" role="group" aria-label="...">
-                    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Name}}/select"><span class="glyphicon glyphicon-star" aria-hidden="true"></span></a>
+                    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Name}}/select"><span class="glyphicon glyphicon-pushpin" aria-hidden="true"></span></a>
                     <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/inspect"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
                   </div>
                   </td>
