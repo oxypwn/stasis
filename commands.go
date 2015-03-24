@@ -210,7 +210,7 @@ func cmdCreateHost(c *cli.Context) {
 	announce := false
 
 	if preinstall == "" {
-		log.Errorf("Misisng --preinstall option")
+		log.Errorf("Missing required option --preinstall")
 		os.Exit(1)
 	}
 
