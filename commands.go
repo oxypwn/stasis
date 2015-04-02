@@ -135,6 +135,12 @@ var Commands = []cli.Command{
     		Usage: "default port to listen on",
     		EnvVar: "STASIS_HTTP_PORT",
   		},
+  		cli.StringFlag{
+    		Name: "static",
+    		Value: "$HOME/.stasis/static",
+    		Usage: "default path for static content",
+    		EnvVar: "STASIS_HTTP_STATIC_PATH",
+  		},
   		cli.BoolFlag{
     		Name: "gather, g",
     		Usage: "Gather mac address",

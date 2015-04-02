@@ -90,8 +90,11 @@ func initRouter() {
 	path := os.Getenv("STASIS_HOST_STORAGE_PATH")
 	log.Info("Using path: ", path)
 
+
 	static := staticDir()
-	log.Info("Using static path: ", static)
+	os.Setenv("STASIS_HTTP_STATIC_PATH", static)
+
+	log.Info("Using static path: ", os.Getenv("STASIS_HTTP_STATIC_PATH"))
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(static)))
 
 	log.Println("Listening...")
