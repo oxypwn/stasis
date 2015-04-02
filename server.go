@@ -40,6 +40,10 @@ func postinstallDir() string {
 	return filepath.Join(drivers.GetHomeDir(), ".stasis", "postinstall")
 }
 
+func staticDir() string {
+	return filepath.Join(drivers.GetHomeDir(), ".stasis", "static")	
+}
+
 func DirExists(dir string) (bool, error) {
 	_, err := os.Stat(dir)
 	if err == nil {
@@ -86,7 +90,9 @@ func initRouter() {
 	path := os.Getenv("STASIS_HOST_STORAGE_PATH")
 	log.Info("Using path: ", path)
 
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir(path)))
+	static := staticDir()
+	log.Info("Using static path: ", static)
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir(static)))
 
 	log.Println("Listening...")
 	http.ListenAndServe(":"+os.Getenv("STASIS_HTTP_PORT"), nil)
