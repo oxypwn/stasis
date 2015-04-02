@@ -137,7 +137,7 @@ var Commands = []cli.Command{
   		},
   		cli.StringFlag{
     		Name: "static",
-    		Value: "$HOME/.stasis/static",
+    		Value: staticDir(),
     		Usage: "default path for static content",
     		EnvVar: "STASIS_HTTP_STATIC_PATH",
   		},
@@ -310,7 +310,7 @@ func cmdLs(c *cli.Context) {
 
 func cmdListen(c *cli.Context) {
 	gather := c.Bool("gather")
-	//store := NewStore()
+	os.Setenv("STASIS_HTTP_STATIC_PATH", c.String("static"))
 	os.Setenv("STASIS_HTTP_PORT", c.String("port"))
 	store := NewHostStore(c.GlobalString("storage-path"))
 	_, err := os.Stat(store.Path)

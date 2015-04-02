@@ -41,7 +41,7 @@ func postinstallDir() string {
 }
 
 func staticDir() string {
-	return filepath.Join(drivers.GetHomeDir(), ".stasis", "static")	
+	return filepath.Join(drivers.GetHomeDir(), ".stasis", "static")
 }
 
 func DirExists(dir string) (bool, error) {
@@ -89,13 +89,11 @@ func initRouter() {
 	log.Info("Listening on: ", port)
 	path := os.Getenv("STASIS_HOST_STORAGE_PATH")
 	log.Info("Using path: ", path)
+	static := os.Getenv("STASIS_HTTP_STATIC_PATH")
+	log.Info("Using static path: ", static)
 
-
-	static := staticDir()
-	os.Setenv("STASIS_HTTP_STATIC_PATH", static)
-
-	log.Info("Using static path: ", os.Getenv("STASIS_HTTP_STATIC_PATH"))
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(static)))
+
 
 	log.Println("Listening...")
 	http.ListenAndServe(":"+os.Getenv("STASIS_HTTP_PORT"), nil)
@@ -169,8 +167,8 @@ func ReturnInstall(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//inst := installDir()
-		//ValidateTemplates(inst, extInstall)
+		inst := installDir()
+		ValidateTemplates(inst, extInstall)
 		//test := host.Install
 		if len(host.Install) != 0 {
 			tmpl := host.Install + extInstall
