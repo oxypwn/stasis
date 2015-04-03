@@ -10,12 +10,9 @@ import (
 	"path/filepath"
 )
 
-func ValidateHostName(name string) (string, error) {
-	validHostNamePattern := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
-	if !validHostNamePattern.MatchString(name) {
-		log.Errorf("Invalid host name %q, it must match %s", name, validHostNamePattern)
-	}
-	return name, nil
+func ValidateHostName(name string) bool {
+	validHostNamePattern := regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])+$`)
+	return validHostNamePattern.MatchString(name) 
 }
 
 func ValidateMacaddr(mac string) (string, error) {

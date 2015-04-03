@@ -199,6 +199,11 @@ func cmdCreateHost(c *cli.Context) {
 	initrd := c.String("initrd")
 	status := c.String("status")
 
+	// check for missing settings
+	if preinstall == "" {
+		log.Errorf("Missing required option --preinstall")
+		os.Exit(1)
+	}
 
 	name := c.Args().First()
 
@@ -207,18 +212,18 @@ func cmdCreateHost(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	ValidateHostName(name)
+	match := ValidateHostName(name)
+	if match == false {
+		log.Errorf("%q Is not a valid hostname.", name)
+		cli.ShowCommandHelp(c, "create")
+		os.Exit(1)
+	}
 
 	if mac != "" {
 		ValidateMacaddr(mac)
 	}
 
 	announce := false
-
-	if preinstall == "" {
-		log.Errorf("Missing required option --preinstall")
-		os.Exit(1)
-	}
 
 	store := NewHostStore(c.GlobalString("storage-path"))
 

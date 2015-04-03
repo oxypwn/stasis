@@ -248,22 +248,19 @@ func ReturnPreinstall(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
-
 func ReturnRawPreinstall(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	macaddress := vars["id"]
+	id := vars["id"]
 
-	_, err := ValidateMacaddr(macaddress)
-	if err != nil {
+	match := ValidateHostName(id)
+	if match == false {
 		http.NotFound(w, r)
 	} else {
-
 		store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
-		host, err := store.GetMacaddress(macaddress)
+		host, err := store.GetHostname(id)
 		if err != nil {
 			log.Println(err)
 		}
-
 		dir := preinstallDir()
 		returnRaw(w, dir, host.Preinstall, extPreinstall)
 	}
@@ -271,15 +268,15 @@ func ReturnRawPreinstall(w http.ResponseWriter, r *http.Request) {
 
 func ReturnPreviewPreinstall(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	macaddress := vars["id"]
+	id := vars["id"]
 
-	_, err := ValidateMacaddr(macaddress)
-	if err != nil {
+	match := ValidateHostName(id)
+	if match == false {
 		http.NotFound(w, r)
 	} else {
 
 		store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
-		host, err := store.GetMacaddress(macaddress)
+		host, err := store.GetHostname(id)
 		if err != nil {
 			log.Println(err)
 		}

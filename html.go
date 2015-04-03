@@ -68,14 +68,14 @@ const index = `
                   <td>{{.Name}}</td>
                   <td>{{.Preinstall}} 
                     <div class="btn-group btn-group-xs" role="group" aria-label="...">
-			                 <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
-                       <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/preinstall/preview"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
+			                 <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/preinstall/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+                       <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/preinstall/preview"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
                     </div> 
 		               </td>
                   <td>{{.Install}}  
 		            	  <div class="btn-group btn-group-xs" role="group" aria-label="...">
-  		        		    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/install/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
-				              <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/install"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
+  		        		    <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/install/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+				              <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/install"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
 			             </div>
 		              </td>
 		            <td>
