@@ -86,6 +86,9 @@ func initRouter() {
 	http.Handle("/", r)
 
 	port := os.Getenv("STASIS_HTTP_PORT")
+	if port == "" {
+		os.Setenv("STASIS_HTTP_PORT", "8080")
+	}
 	log.Info("Listening on: ", port)
 	path := os.Getenv("STASIS_HOST_STORAGE_PATH")
 	log.Info("Using path: ", path)

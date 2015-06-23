@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"path/filepath"
+	"runtime"
 )
 
 func ValidateHostName(name string) bool {
@@ -54,4 +55,11 @@ func listTemplates(path string) {
     for _, f := range files {
             fmt.Println(f.Name())
     }
+}
+
+func GetHomeDir() string {
+	if runtime.GOOS == "windows" {
+		return os.Getenv("USERPROFILE")
+	}
+	return os.Getenv("HOME")
 }

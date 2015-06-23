@@ -11,8 +11,8 @@ import (
 	"github.com/codegangsta/cli"
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/pandrew/stasis/drivers"
-	_ "github.com/pandrew/stasis/drivers/none"
+	//"github.com/pandrew/stasis/drivers"
+	//_ "github.com/pandrew/stasis/drivers/none"
 )
 
 
@@ -54,78 +54,91 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 		Active:     isActive,
 		Preinstall:	host.Preinstall,
 		Install:	host.Install,
-		DriverName: host.Driver.DriverName(),
+		//DriverName: host.Driver.DriverName(),
 		Status:		host.Status,
 		Macaddress: host.Macaddress,
 	}
 }
 
+var Flags = []cli.Flag {
+  cli.StringFlag{
+    Name: "lang, l",
+    Value: "english",
+    Usage: "language for the greeting",
+    EnvVar: "LEGACY_COMPAT_LANG,APP_LANG,LANG",
+  },
+}
+
 var Commands = []cli.Command{
 	{
-		Name: "host",
-		ShortName: "H",
-		Usage: "Work with hosts",
-		Subcommands: []cli.Command{
-			{
-				Flags: append(
-				drivers.GetCreateFlags(),
-				preinstall,
-				preinstallMac,
-				preinstallKernel,
-				preinstallInitrd,
-				preinstallAppend,
-				install,
-				installUsername,
-				installPassword,
-				installWindowsKey,
-				postinstall,
-				cli.StringFlag{
-					Name: "driver, d",
-					Usage: fmt.Sprintf(
-						"Driver to create machine with. Available drivers: %s",
-						strings.Join(drivers.GetDriverNames(), ", "),
-					),
-					Value: "none",
-				},
-		  		cli.StringFlag{
-		    		Name: "mirror",
-		    		Value: "boot:8080",
-		    		Usage: "hostname/ip to stasis",
-		    		EnvVar: "STASIS_HTTP_MIRROR",
-		    	},
-		  		cli.StringFlag{
-		    		Name: "status",
-		    		Value: "INACTIVE",
-		    		Usage: "Initial status of machine",
-		  		},
-		  	),
-				Name:  "create",
-				ShortName: "c",
-				Usage: "Create a host",
-				Action: cmdCreateHost,
-			},
-			{
-				Flags: []cli.Flag{
-				cli.BoolFlag{
-					Name:  "quiet, q",
-					Usage: "Enable quiet mode",
-					},
-				},
-				Name:  "ls",
-				Usage: "List machines",
-				Action: cmdLs,
-			},
-			{
-				Name:  "inspect",
-				Usage: "Inspect information about a machine",
-				Action: cmdInspect,
-			},
-			{
-				Name:  "toggle",
-				Usage: "Toggles hosts status between INACTIVE and ACTIVE ",
-				Action: cmdToggle,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "quiet, q",
+				Usage: "Enable quiet mode",
 			},
 		},
+		Name:  "list",
+		ShortName: "ls",
+		Usage: "List machines",
+		Action: cmdLs,
+	},
+	{
+		Flags: []cli.Flag {
+			cli.StringFlag{
+				Name: "preinstall",
+				Value: "",
+				Usage: "iPxe template",
+			},
+			cli.StringFlag{
+				Name: "mac",
+				Value: "",
+				Usage: "Mac address of host, Example: 00-00-00-00-00-00",
+			},
+			cli.StringFlag{
+				Name: "append",
+				Value: "",
+				Usage: "Append string",
+			},
+			cli.StringFlag{
+				Name: "kernel",
+				Value: "",
+				Usage: "Kernel string",
+			},
+			cli.StringFlag{
+				Name: "initrd",
+				Value: "",
+				Usage: "Initrd string",
+			},
+			cli.StringFlag{
+				Name: "install",
+				Value: "",
+				Usage: "kickstart/preseed/Autounattend.xml/... template",
+			},
+			cli.StringFlag{
+				Name: "serial",
+				Value: "",
+				Usage: "Serial key; Windows...",
+			},
+			cli.StringFlag{
+				Name: "username",
+				Value: "stasis",
+				Usage: "Username for default user",
+			},
+			cli.StringFlag{
+				Name: "password",
+				Value: "stasis",
+				Usage: "Password to default user",
+			},
+			cli.StringFlag{
+				Name: "postinstall",
+				Value: "",
+				Usage: "Uri to script to execute after installation.",
+			},
+		},
+		Name: "create",
+		ShortName: "c",
+		Usage: "Create host installation profile",
+		Action: cmdCreateHost,
 	},
 	{
 		Flags: []cli.Flag {
@@ -151,18 +164,8 @@ var Commands = []cli.Command{
 		Usage: "Listens on port",
 		Action: cmdListen,
 	},
-	{
-		Name: "template",
-		Usage: "List templates",
-		Subcommands: []cli.Command{
-    		{
-       			Name:  "ls",
-        		Usage: "list templates",
-        		Action: cmdListTemplates,
-      		},
-		},
-	},
 }
+
 
 func cmdNotFound(c *cli.Context, command string) {
 	log.Fatalf(
@@ -184,7 +187,7 @@ func cmdInspect(c *cli.Context) {
 }
 
 func cmdCreateHost(c *cli.Context) {
-	driver := c.String("driver")
+	//driver := c.String("driver")
 	mac := c.String("mac")
 	preinstall := c.String("preinstall")
 	install := c.String("install")
@@ -204,7 +207,10 @@ func cmdCreateHost(c *cli.Context) {
 		log.Errorf("Missing required option --preinstall")
 		os.Exit(1)
 	}
-
+	if mac == "" {
+		log.Errorf("Missing required option --mac")
+		os.Exit(1)
+	}
 	name := c.Args().First()
 
 	if name == "" {
@@ -228,7 +234,7 @@ func cmdCreateHost(c *cli.Context) {
 	store := NewHostStore(c.GlobalString("storage-path"))
 
 
-	host, err := store.CreateHost(name, driver, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, announce, c)
+	host, err := store.CreateHost(name, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, announce)
 	if err != nil {
 		log.Fatal(err)
 	}

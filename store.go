@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"io/ioutil"
 
-	"github.com/pandrew/stasis/drivers"
+	//"github.com/pandrew/stasis/drivers"
 	log "github.com/Sirupsen/logrus"
 
 )
@@ -20,13 +20,13 @@ type Store struct {
 
 func NewHostStore(rootPath string) *Store {
 	if rootPath == "" {
-		rootPath = filepath.Join(drivers.GetHomeDir(), ".stasis", "machines")
+		rootPath = filepath.Join(GetHomeDir(), ".stasis", "machines")
 		os.Setenv("STASIS_HOST_STORAGE_PATH", rootPath)
 	}
 	return &Store{Path: rootPath}
 }
 
-func (s *Store) CreateHost(name, driverName, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status string, announce bool, flags drivers.DriverOptions) (*Host, error) {
+func (s *Store) CreateHost(name, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status string, announce bool) (*Host, error) {
 	exists, err := s.Exists(name)
 	if err != nil {
 		return nil, err
@@ -38,15 +38,15 @@ func (s *Store) CreateHost(name, driverName, mac, preinstall, install, username,
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, driverName, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, hostPath, announce)
+	host, err := NewHost(name, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, hostPath, announce)
 	if err != nil {
 		return host, err
 	}
-	if flags != nil {
+	/*if flags != nil {
 		if err := host.Driver.SetConfigFromFlags(flags); err != nil {
 			return host, err
 		}
-	}
+	}*/
 
 	if err := os.MkdirAll(hostPath, 0700); err != nil {
 		return nil, err

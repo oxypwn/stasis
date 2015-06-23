@@ -7,15 +7,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pandrew/stasis/drivers"
+	//"github.com/pandrew/stasis/drivers"
 
 )
 
 
 type Host struct {
 	Name       string
-	DriverName string
-	Driver     drivers.Driver
+	//DriverName string
+	//Driver     drivers.Driver
 	Macaddress string
 	Preinstall    string
 	Install     string
@@ -33,13 +33,13 @@ type Host struct {
 
 }
 
-type hostConfig struct {
-	DriverName string
-}
+//type hostConfig struct {
+//	DriverName string
+//}
 
 func NewHost(
 	name, 
-	driverName, 
+	//driverName, 
 	mac, 
 	preinstall, 
 	install,
@@ -54,16 +54,16 @@ func NewHost(
 	status, 
 	storePath string,
 	announce bool) (*Host, error) {
-	driver, err := drivers.NewDriver(driverName, storePath)
+	/*driver, err := drivers.NewDriver(driverName, storePath)
 	if err != nil {
 		return nil, err
-	}
+	}*/
 	//status = "INACTIVE"
 
 	return &Host{
 		Name:       name,
-		DriverName:	driverName,
-		Driver:		driver,
+		//DriverName:	driverName,
+		//Driver:		driver,
 		Macaddress:	mac,
 		Preinstall:	preinstall,
 		Install:    install,
@@ -82,9 +82,9 @@ func NewHost(
 }
 
 func (h *Host) Create() error {
-	if err := h.Driver.Create(); err != nil {
-		return err
-	}
+	//if err := h.Driver.Create(); err != nil {
+	//	return err
+	//}
 	if err := h.SaveConfig(); err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (h *Host) LoadConfig() error {
 	if err != nil {
 		return err
 	}
-
+/*
 	// First pass: find the driver name and load the driver
 	var config hostConfig
 	if err := json.Unmarshal(data, &config); err != nil {
@@ -145,7 +145,7 @@ func (h *Host) LoadConfig() error {
 		return err
 	}
 	h.Driver = driver
-
+*/
 	// Second pass: unmarshal driver config into correct driver
 	if err := json.Unmarshal(data, &h); err != nil {
 		return err
