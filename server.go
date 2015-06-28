@@ -56,7 +56,7 @@ func DirExists(dir string) (bool, error) {
 
 func init() {
 	dirInstall := installDir()
-	pathExist, _ := DirExists(dirInstall) 
+	pathExist, _ := DirExists(dirInstall)
 	if !pathExist {
 		if err := os.MkdirAll(dirInstall, 0700); err != nil {
 			log.Println(err)
@@ -64,7 +64,7 @@ func init() {
 	}
 
 
-		
+
 }
 
 
@@ -241,7 +241,7 @@ func ReturnPreinstall(w http.ResponseWriter, r *http.Request) {
 		} else if host.Status == "INSTALLED" {
 			ip := GetIP(r)
 			log.Errorf("%s requests %s: host is already installed!", ip, macaddress)
-		} else {		
+		} else {
 			ip := GetIP(r)
 			log.Errorf("%s requests %s: not in database!", ip, macaddress)
 		}
@@ -301,7 +301,7 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ValidateMacaddr(macaddress)
-	
+
 	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
 	// Locate the host
 	host, err := store.GetActive()
@@ -310,14 +310,14 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ip := GetIP(r)
-	
+
 	if macaddress == host.Macaddress {
 		http.NotFound(w, r)
-		log.Errorf("%s requests to modify %q with macaddress %s to %s: DENIED" , ip, host.Name, host.Macaddress, macaddress)
+		log.Errorf("%s requests to modify host %qs macaddress %s to %s: DENIED" , ip, host.Name, host.Macaddress, macaddress)
 		return
 	} else {
-		if host.Announce {	
-			log.Printf("%s requests to modify %q with macaddress %s to %s: ACCEPTED" , ip, host.Name, host.Macaddress, macaddress)
+		if host.Announce {
+			log.Printf("%s requests to modify host %qs with macaddress %s to %s: ACCEPTED" , ip, host.Name, host.Macaddress, macaddress)
 
 			host.Macaddress = macaddress
 			host.Announce = false
@@ -337,7 +337,7 @@ func toggle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	
+
 	log.Println(host)
 	if host.Announce == false {
 		host.Announce = true
@@ -373,7 +373,7 @@ func Select(w http.ResponseWriter, r *http.Request) {
 
 	store.SetActive(host)
 
-		
+
 	http.Redirect(w, r, "/v1/info/stats", http.StatusFound)
 
 

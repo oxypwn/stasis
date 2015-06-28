@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt" 
+	"fmt"
 	"strings"
 	"os"
 	//"sync"
@@ -207,10 +207,7 @@ func cmdCreateHost(c *cli.Context) {
 		log.Errorf("Missing required option --preinstall")
 		os.Exit(1)
 	}
-	if mac == "" {
-		log.Errorf("Missing required option --mac")
-		os.Exit(1)
-	}
+
 	name := c.Args().First()
 
 	if name == "" {
@@ -248,7 +245,7 @@ func cmdCreateHost(c *cli.Context) {
 func cmdToggle(c *cli.Context) {
 
 	host := getHost(c)
-	
+
 	if host.Status == "INACTIVE" {
 		host.Status = "ACTIVE"
 		log.Infof("%s is now ACTIVE", host.Name)
@@ -328,7 +325,7 @@ func cmdListen(c *cli.Context) {
 	if os.IsNotExist(err) {
 		log.Errorf("There is no machines or location to store them.")
 		cli.ShowCommandHelp(c, "H c")
-		os.Exit(1)	
+		os.Exit(1)
 	} else if err == nil {
 		if gather {
 			name := c.Args().First()
@@ -347,9 +344,9 @@ func cmdListen(c *cli.Context) {
 					log.Fatalf("error setting active host: %v", err)
 				}
 			}
-		} 
+		}
 		initRouter()
-	
+
 	}
 }
 
