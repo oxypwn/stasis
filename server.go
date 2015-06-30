@@ -1,27 +1,31 @@
 package main
 
 import (
-	"fmt"
-	"html/template"
-	"net/http"
-	"net"
 	"encoding/json"
-	"os"
-	"path/filepath"
-	"io/ioutil"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/pandrew/stasis/drivers"
+	"html/template"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
 )
 
 const (
-	 extPreinstall string = ".preinstall"
-	 extGohtml string = ".gohtml"
-	 extInstall string = ".install"
+	extPreinstall string = ".preinstall"
+	extGohtml     string = ".gohtml"
+	extInstall    string = ".install"
 )
 
 func GetStasisDir() string {
 	return fmt.Sprintf(filepath.Join(drivers.GetHomeDir(), ".stasis"))
+}
+
+func hostDir() string {
+	return filepath.Join(GetStasisDir(), "machines")
 }
 
 func preinstallDir() string {
@@ -63,11 +67,7 @@ func init() {
 		}
 	}
 
-
-
 }
-
-
 
 func initRouter() {
 	r := mux.NewRouter()
@@ -96,7 +96,6 @@ func initRouter() {
 	log.Info("Using static path: ", static)
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(static)))
-
 
 	log.Println("Listening...")
 	http.ListenAndServe(":"+os.Getenv("STASIS_HTTP_PORT"), nil)
@@ -146,15 +145,14 @@ func ReturnStats(w http.ResponseWriter, r *http.Request) {
 	close(hostListItems)
 	templates, err := template.New("stats").Parse(index)
 	if err != nil {
-        panic(err)
-    }
-    err = templates.Execute(w, items)
+		panic(err)
+	}
+	err = templates.Execute(w, items)
 	if err != nil {
 		fmt.Println("Fatal error ", err.Error())
 		os.Exit(1)
 	}
 }
-
 
 func ReturnInstall(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -290,8 +288,6 @@ func ReturnPreviewPreinstall(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
-
 func GatherMac(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	macaddress := vars["id"]
@@ -313,11 +309,11 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 
 	if macaddress == host.Macaddress {
 		http.NotFound(w, r)
-		log.Errorf("%s requests to modify host %qs macaddress %s to %s: DENIED" , ip, host.Name, host.Macaddress, macaddress)
+		log.Errorf("%s requests to modify host %qs macaddress %s to %s: DENIED", ip, host.Name, host.Macaddress, macaddress)
 		return
 	} else {
 		if host.Announce {
-			log.Printf("%s requests to modify host %qs with macaddress %s to %s: ACCEPTED" , ip, host.Name, host.Macaddress, macaddress)
+			log.Printf("%s requests to modify host %qs with macaddress %s to %s: ACCEPTED", ip, host.Name, host.Macaddress, macaddress)
 
 			host.Macaddress = macaddress
 			host.Announce = false
@@ -357,7 +353,6 @@ func toggle(w http.ResponseWriter, r *http.Request) {
 	host.SaveConfig()
 	http.Redirect(w, r, "/v1/info/stats", http.StatusFound)
 
-
 }
 
 func Select(w http.ResponseWriter, r *http.Request) {
@@ -373,9 +368,7 @@ func Select(w http.ResponseWriter, r *http.Request) {
 
 	store.SetActive(host)
 
-
 	http.Redirect(w, r, "/v1/info/stats", http.StatusFound)
-
 
 }
 
@@ -395,9 +388,9 @@ func returnRaw(w http.ResponseWriter, dir string, tmpl string, ext string) {
 }
 
 func GetIP(r *http.Request) string {
-    if ipProxy := r.Header.Get("X-FORWARDED-FOR"); len(ipProxy) > 0 {
-        return ipProxy
-    }
-    ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-    return ip
+	if ipProxy := r.Header.Get("X-FORWARDED-FOR"); len(ipProxy) > 0 {
+		return ipProxy
+	}
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	return ip
 }

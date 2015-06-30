@@ -1,17 +1,13 @@
 package main
 
 import (
-	"os"
 	"fmt"
-	"path/filepath"
 	"io/ioutil"
-
-	//"github.com/pandrew/stasis/drivers"
+	"os"
+	"encoding/json"
+	"path/filepath"
 	log "github.com/Sirupsen/logrus"
-
 )
-
-
 
 // Store persists hosts on the filesystem
 type Store struct {
@@ -26,7 +22,26 @@ func NewHostStore(rootPath string) *Store {
 	return &Store{Path: rootPath}
 }
 
-func (s *Store) CreateHost(name, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status string, announce bool) (*Host, error) {
+func (s *Store) Save(host *Host) error {
+	data, err := json.Marshal(host)
+	if err != nil {
+		return err
+	}
+
+	hostPath := filepath.Join(GetStasisDir(), host.Name)
+
+	if err := os.MkdirAll(hostPath, 0700); err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(hostPath, "config.json"), data, 0600); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) CreateHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status string, announce bool) (*Host, error) {
 	exists, err := s.Exists(name)
 	if err != nil {
 		return nil, err
@@ -38,15 +53,11 @@ func (s *Store) CreateHost(name, mac, preinstall, install, username, password, p
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, hostPath, announce)
+	host, err := NewHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, announce)
 	if err != nil {
 		return host, err
 	}
-	/*if flags != nil {
-		if err := host.Driver.SetConfigFromFlags(flags); err != nil {
-			return host, err
-		}
-	}*/
+
 
 	if err := os.MkdirAll(hostPath, 0700); err != nil {
 		return nil, err
@@ -56,11 +67,13 @@ func (s *Store) CreateHost(name, mac, preinstall, install, username, password, p
 		return host, err
 	}
 
-	if err := host.Create(); err != nil {
-		return host, err
-	}
+	//if err := host.Create(); err != nil {
+	//	return host, err
+	//}
 	return host, nil
 }
+
+
 
 func (s *Store) GetMacaddress(macaddress string) (*Host, error) {
 	dir, err := ioutil.ReadDir(s.Path)
@@ -76,7 +89,7 @@ func (s *Store) GetMacaddress(macaddress string) (*Host, error) {
 			isActive, err := s.IsActive(host)
 			if err != nil {
 				log.Debugf("error determining whether host %q is active: %s",
-				host.Name, err)
+					host.Name, err)
 			}
 			if isActive {
 				if host.Macaddress == macaddress {
@@ -137,8 +150,7 @@ func (s *Store) List() ([]Host, error) {
 }
 
 func (s *Store) Load(name string) (*Host, error) {
-	hostPath := filepath.Join(s.Path, name)
-	return LoadHost(name, hostPath)
+	return LoadHost(name)
 }
 
 func (s *Store) IsActive(host *Host) (bool, error) {
@@ -169,8 +181,18 @@ func (s *Store) SetActive(host *Host) error {
 	return ioutil.WriteFile(s.activePath(), []byte(host.Name), 0600)
 }
 
-func (s *Store) RemoveActive() error {
+func (s *Store) RemoveActive(name string) error {
 	return os.Remove(s.activePath())
+}
+
+func (s *Store) Remove(name string) error {
+	_, err := LoadHost(name)
+	if err != nil {
+		return err
+	}
+	hostPath := filepath.Join(hostDir(), name)
+	return os.RemoveAll(hostPath)
+
 }
 
 // activePath returns the path to the file that stores the name of the

@@ -13,94 +13,76 @@ import (
 
 
 type Host struct {
-	Name       string
-	//DriverName string
-	//Driver     drivers.Driver
-	Macaddress string
-	Preinstall    string
+	Name				string
+	StorePath		string
+	Macaddress	string
+	Preinstall	string
 	Install     string
-	Username	string
-	Password	string
+	Username		string
+	Password		string
 	Postinstall string
-	WindowsKey string
-	Append		string
-	Mirror		string
-	Kernel		string
-	Initrd		string
-	Status		string 
-	storePath  string
+	WindowsKey	string
+	Append			string
+	Mirror			string
+	Kernel			string
+	Initrd			string
+	Status			string
 	Announce    bool
-
 }
 
-//type hostConfig struct {
-//	DriverName string
-//}
 
 func NewHost(
-	name, 
-	//driverName, 
-	mac, 
-	preinstall, 
+	name,
+	storePath,
+	mac,
+	preinstall,
 	install,
 	username,
 	password,
 	postinstall,
-	windowsKey, 
-	append, 
-	mirror, 
-	kernel, 
+	windowsKey,
+	append,
+	mirror,
+	kernel,
 	initrd,
-	status, 
-	storePath string,
+	status string,
 	announce bool) (*Host, error) {
-	/*driver, err := drivers.NewDriver(driverName, storePath)
-	if err != nil {
-		return nil, err
-	}*/
-	//status = "INACTIVE"
-
-	return &Host{
-		Name:       name,
-		//DriverName:	driverName,
-		//Driver:		driver,
-		Macaddress:	mac,
-		Preinstall:	preinstall,
-		Install:    install,
-		Username:   username,
-		Password:	password,
-		Postinstall: postinstall,
-		WindowsKey:     windowsKey,
-		Append:		append,
-		Mirror:		mirror,
-		Kernel:		kernel,
-		Initrd:		initrd,
-		Status:		status,
-		Announce:	announce,
-		storePath:  storePath,
+	return &Host {
+		Name:					name,
+		StorePath:		storePath,
+		Macaddress:		mac,
+		Preinstall:		preinstall,
+		Install:			install,
+		Username:			username,
+		Password:			password,
+		Postinstall:	postinstall,
+		WindowsKey:		windowsKey,
+		Append:				append,
+		Mirror:				mirror,
+		Kernel:				kernel,
+		Initrd:				initrd,
+		Status:				status,
+		Announce:			announce,
 	}, nil
 }
 
-func (h *Host) Create() error {
-	//if err := h.Driver.Create(); err != nil {
-	//	return err
-	//}
+/*func (h *Host) Create() error {
 	if err := h.SaveConfig(); err != nil {
 		return err
 	}
 	return nil
-}
+}*/
 
 
 func (h *Host) removeStorePath() error {
-	file, err := os.Stat(h.storePath)
+	file, err := os.Stat(h.StorePath)
 	if err != nil {
 		return err
 	}
 	if !file.IsDir() {
-		return fmt.Errorf("%q is not a directory", h.storePath)
+		return fmt.Errorf("%q is not a directory", h.StorePath)
 	}
-	return os.RemoveAll(h.storePath)
+	return os.RemoveAll(h.StorePath)
 }
 
 
@@ -111,17 +93,18 @@ func (h *Host) SaveConfig() error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(h.storePath, "config.json"), data, 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(h.StorePath, "config.json"), data, 0600); err != nil {
 		return err
 	}
 	return nil
 }
 
-func LoadHost(name string, storePath string) (*Host, error) {
-	if _, err := os.Stat(storePath); os.IsNotExist(err) {
+func LoadHost(name string) (*Host, error) {
+	hostPath := filepath.Join(hostDir(), name)
+	if _, err := os.Stat(hostPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("Host %q does not exist", name)
 	}
-	host := &Host{Name: name, storePath: storePath}
+	host := &Host{Name: name, StorePath: hostPath}
 	if err := host.LoadConfig(); err != nil {
 		return nil, err
 	}
@@ -129,7 +112,7 @@ func LoadHost(name string, storePath string) (*Host, error) {
 }
 
 func (h *Host) LoadConfig() error {
-	data, err := ioutil.ReadFile(filepath.Join(h.storePath, "config.json"))
+	data, err := ioutil.ReadFile(filepath.Join(h.StorePath, "config.json"))
 	if err != nil {
 		return err
 	}
@@ -154,4 +137,3 @@ func (h *Host) LoadConfig() error {
 	return nil
 
 }
-

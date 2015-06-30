@@ -2,30 +2,30 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 	//"sync"
-	"sort"
 	"encoding/json"
-	"text/tabwriter"
-	"github.com/codegangsta/cli"
 	log "github.com/Sirupsen/logrus"
+	"github.com/codegangsta/cli"
+	"sort"
+	"text/tabwriter"
+	"path/filepath"
 
 	//"github.com/pandrew/stasis/drivers"
 	//_ "github.com/pandrew/stasis/drivers/none"
 )
 
-
 type hostListItem struct {
-	Name       string
-	Active     bool
-	Preinstall   string
-	Install    string
+	Name        string
+	Active      bool
+	Preinstall  string
+	Install     string
 	Postinstall string
-	Status     string
-	Append     string
-	DriverName string
-	Macaddress string
+	Status      string
+	Append      string
+	DriverName  string
+	Macaddress  string
 }
 
 type hostListItemByName []hostListItem
@@ -52,21 +52,12 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 	hostListItems <- hostListItem{
 		Name:       host.Name,
 		Active:     isActive,
-		Preinstall:	host.Preinstall,
-		Install:	host.Install,
+		Preinstall: host.Preinstall,
+		Install:    host.Install,
 		//DriverName: host.Driver.DriverName(),
-		Status:		host.Status,
+		Status:     host.Status,
 		Macaddress: host.Macaddress,
 	}
-}
-
-var Flags = []cli.Flag {
-  cli.StringFlag{
-    Name: "lang, l",
-    Value: "english",
-    Usage: "language for the greeting",
-    EnvVar: "LEGACY_COMPAT_LANG,APP_LANG,LANG",
-  },
 }
 
 var Commands = []cli.Command{
@@ -77,95 +68,100 @@ var Commands = []cli.Command{
 				Usage: "Enable quiet mode",
 			},
 		},
-		Name:  "list",
+		Name:      "list",
 		ShortName: "ls",
-		Usage: "List machines",
-		Action: cmdLs,
+		Usage:     "List hosts",
+		Action:    cmdLs,
 	},
 	{
-		Flags: []cli.Flag {
+		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name: "preinstall",
+				Name:  "preinstall",
 				Value: "",
 				Usage: "iPxe template",
 			},
 			cli.StringFlag{
-				Name: "mac",
+				Name:  "mac",
 				Value: "",
 				Usage: "Mac address of host, Example: 00-00-00-00-00-00",
 			},
 			cli.StringFlag{
-				Name: "append",
+				Name:  "append",
 				Value: "",
 				Usage: "Append string",
 			},
 			cli.StringFlag{
-				Name: "kernel",
+				Name:  "kernel",
 				Value: "",
 				Usage: "Kernel string",
 			},
 			cli.StringFlag{
-				Name: "initrd",
+				Name:  "initrd",
 				Value: "",
 				Usage: "Initrd string",
 			},
 			cli.StringFlag{
-				Name: "install",
+				Name:  "install",
 				Value: "",
 				Usage: "kickstart/preseed/Autounattend.xml/... template",
 			},
 			cli.StringFlag{
-				Name: "serial",
+				Name:  "serial",
 				Value: "",
 				Usage: "Serial key; Windows...",
 			},
 			cli.StringFlag{
-				Name: "username",
+				Name:  "username",
 				Value: "stasis",
 				Usage: "Username for default user",
 			},
 			cli.StringFlag{
-				Name: "password",
+				Name:  "password",
 				Value: "stasis",
 				Usage: "Password to default user",
 			},
 			cli.StringFlag{
-				Name: "postinstall",
+				Name:  "postinstall",
 				Value: "",
 				Usage: "Uri to script to execute after installation.",
 			},
 		},
-		Name: "create",
+		Name:      "create",
 		ShortName: "c",
-		Usage: "Create host installation profile",
-		Action: cmdCreateHost,
+		Usage:     "Create host installation profile",
+		Action:    cmdCreateHost,
 	},
 	{
-		Flags: []cli.Flag {
-  		cli.StringFlag{
-    		Name: "port",
-    		Value: "8080",
-    		Usage: "default port to listen on",
-    		EnvVar: "STASIS_HTTP_PORT",
-  		},
-  		cli.StringFlag{
-    		Name: "static",
-    		Value: staticDir(),
-    		Usage: "default path for static content",
-    		EnvVar: "STASIS_HTTP_STATIC_PATH",
-  		},
-  		cli.BoolFlag{
-    		Name: "gather, g",
-    		Usage: "Gather mac address",
-  		},
-  	},
-		Name: "listen",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:   "port",
+				Value:  "8080",
+				Usage:  "default port to listen on",
+				EnvVar: "STASIS_HTTP_PORT",
+			},
+			cli.StringFlag{
+				Name:   "static",
+				Value:  staticDir(),
+				Usage:  "default path for static content",
+				EnvVar: "STASIS_HTTP_STATIC_PATH",
+			},
+			cli.BoolFlag{
+				Name:  "gather, g",
+				Usage: "Gather mac address",
+			},
+		},
+		Name:      "listen",
 		ShortName: "l",
-		Usage: "Listens on port",
-		Action: cmdListen,
+		Usage:     "Listens on port",
+		Action:    cmdListen,
+	},
+	{
+		Name:      "remove",
+		ShortName: "rm",
+		Usage:     "Delete a host",
+		Action:    cmdRm,
 	},
 }
-
 
 func cmdNotFound(c *cli.Context, command string) {
 	log.Fatalf(
@@ -187,7 +183,6 @@ func cmdInspect(c *cli.Context) {
 }
 
 func cmdCreateHost(c *cli.Context) {
-	//driver := c.String("driver")
 	mac := c.String("mac")
 	preinstall := c.String("preinstall")
 	install := c.String("install")
@@ -230,8 +225,9 @@ func cmdCreateHost(c *cli.Context) {
 
 	store := NewHostStore(c.GlobalString("storage-path"))
 
+	storePath := filepath.Join(hostDir(), name)
 
-	host, err := store.CreateHost(name, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, announce)
+	host, err := store.CreateHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, announce)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -257,18 +253,11 @@ func cmdToggle(c *cli.Context) {
 		log.Infof("%s is now INATIVE", host.Name)
 	}
 
-	host.SaveConfig()
+	if err := host.SaveConfig(); err != nil {
+		log.Fatal(err)
+	}
 
 }
-/*
-var global string
-func cmdGather(c *cli.Context) {
-		host := getHost(c)
-		global := host.Name
-		log.Println("global", global)
-		initRouter()
-}
-*/
 
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
@@ -378,4 +367,26 @@ func getHost(c *cli.Context) *Host {
 		log.Fatalf("unable to load host: %v", err)
 	}
 	return host
+}
+
+func cmdRm(c *cli.Context) {
+	if len(c.Args()) == 0 {
+		cli.ShowCommandHelp(c, "rm")
+		log.Fatal("You must specify a machine name")
+	}
+
+	isError := false
+
+	store := NewHostStore(c.GlobalString("storage-path"))
+
+	for _, host := range c.Args() {
+		if err := store.Remove(host); err != nil {
+			isError = true
+		} else {
+			log.Infof("Successfully removed %s", host)
+		}
+	}
+	if isError {
+		log.Fatal("There was an error removing a machine. To force remove it, pass the -f option. Warning: this might leave it running on the provider.")
+	}
 }
