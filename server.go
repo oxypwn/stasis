@@ -12,7 +12,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
-	"github.com/pandrew/drivers"
 	//"github.com/pandrew/stasis/drivers"
 )
 
@@ -23,7 +22,7 @@ const (
 )
 
 func GetStasisDir() string {
-	return fmt.Sprintf(filepath.Join(drivers.GetHomeDir(), ".stasis"))
+	return fmt.Sprintf(filepath.Join(GetHomeDir(), ".stasis"))
 }
 
 func hostDir() string {
@@ -35,7 +34,7 @@ func preinstallDir() string {
 }
 
 func gohtmlDir() string {
-	return filepath.Join(drivers.GetHomeDir(), ".stasis", "gohtml")
+	return filepath.Join(GetStasisDir(), "gohtml")
 }
 
 func installDir() string {
@@ -43,11 +42,11 @@ func installDir() string {
 }
 
 func postinstallDir() string {
-	return filepath.Join(drivers.GetHomeDir(), ".stasis", "postinstall")
+	return filepath.Join(GetStasisDir(), "postinstall")
 }
 
 func staticDir() string {
-	return filepath.Join(drivers.GetHomeDir(), ".stasis", "static")
+	return filepath.Join(GetStasisDir(), "static")
 }
 
 func DirExists(dir string) (bool, error) {
