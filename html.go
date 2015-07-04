@@ -32,12 +32,14 @@ const index = `
     <![endif]-->
 
     <style media="screen" type="text/css">
-
-      .label-INACTIVE {
+      .label-true {
+        background-color: #d9534f;
+      }
+      .label-false {
         background-color: #5bc0de;
       }
-      .label-true {
-        background-color: #337ab7;
+      .label-INACTIVE {
+        background-color: #5bc0de;
       }
       .label-ACTIVE {
         background-color: #d9534f;
@@ -55,36 +57,44 @@ const index = `
             <table class="table table-condensed">
               <thead>
                 <tr>
-                  <th>Hostname</th>
-                  <th>Preinstall</th>
-		              <th>Install</th>
-                  <th>Status</th>
-                  <th>Macaddress</th>
+					<th>Hostname</th>
+					<th>Preinstall</th>
+					<th>Install</th>
+					<th>Status</th>
+					<th>Macaddress</th>
                 </tr>
               </thead>
               <tbody>
-              {{range.}}
+			  {{range.}}
                 <tr class="{{if .Active}}info{{end}}">
                   <td>{{.Name}}</td>
-                  <td>{{.Preinstall}} 
+                  <td>{{.Preinstall}}
                     <div class="btn-group btn-group-xs" role="group" aria-label="...">
-			                 <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/preinstall/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
-                       <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/preinstall/preview"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
-                    </div> 
+			        	<a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/preinstall/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+						<a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/preinstall/preview"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
+						<a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/preinstall/toggle"><span class="glyphicon glyphicon-retweet" aria-hidden="true"></span></a>
+
+					</div>
+
+					{{ if .DisabledPreinstall  }}
+					<span class="label label-true">Disabled</span>
+        {{else}}
+        <span class="label label-false">Enabled</span>
+					{{end}}
 		               </td>
-                  <td>{{.Install}}  
+                  <td>{{.Install}}
 		            	  <div class="btn-group btn-group-xs" role="group" aria-label="...">
   		        		    <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/install/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
 				              <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/install"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
 			             </div>
 		              </td>
 		            <td>
-                <span class="label label-{{.Status}}">{{.Status}}</span> 
+                <span class="label label-{{.Status}}">{{.Status}}</span>
                   <div class="btn-group btn-group-xs" role="group" aria-label="...">
                     <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Name}}/toggle"><span class="glyphicon glyphicon-retweet" aria-hidden="true"></span></a>
                   </div>
                 </td>
-                  <td>{{.Macaddress}} 
+                  <td>{{.Macaddress}}
                   <div class="btn-group btn-group-xs" role="group" aria-label="...">
                     <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Name}}/select"><span class="glyphicon glyphicon-pushpin" aria-hidden="true"></span></a>
                     <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Macaddress}}/inspect"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>

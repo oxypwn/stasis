@@ -1,31 +1,30 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
-	//"sync"
-	"encoding/json"
+	"text/tabwriter"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"sort"
-	"text/tabwriter"
-	"path/filepath"
-
-	//"github.com/pandrew/stasis/drivers"
-	//_ "github.com/pandrew/stasis/drivers/none"
 )
 
 type hostListItem struct {
-	Name        string
-	Active      bool
-	Preinstall  string
-	Install     string
-	Postinstall string
-	Status      string
-	Append      string
-	DriverName  string
-	Macaddress  string
+	Name               string
+	Active             bool
+	Preinstall         string
+	DisabledPreinstall bool
+	Install            string
+	AllowInstall       bool
+	Postinstall        string
+	AllowPostinstall   bool
+	Status             string
+	Append             string
+	Macaddress         string
 }
 
 type hostListItemByName []hostListItem
@@ -50,13 +49,13 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 	}
 
 	hostListItems <- hostListItem{
-		Name:       host.Name,
-		Active:     isActive,
-		Preinstall: host.Preinstall,
-		Install:    host.Install,
-		//DriverName: host.Driver.DriverName(),
-		Status:     host.Status,
-		Macaddress: host.Macaddress,
+		Name:               host.Name,
+		Active:             isActive,
+		Preinstall:         host.Preinstall,
+		DisabledPreinstall: host.DisabledPreinstall,
+		Install:            host.Install,
+		Status:             host.Status,
+		Macaddress:         host.Macaddress,
 	}
 }
 
@@ -222,12 +221,15 @@ func cmdCreateHost(c *cli.Context) {
 	}
 
 	announce := false
+	disabledpreinstall := true
+	allowinstall := true
+	allowpostinstall := true
 
 	store := NewHostStore(c.GlobalString("storage-path"))
 
 	storePath := filepath.Join(hostDir(), name)
 
-	host, err := store.CreateHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, announce)
+	host, err := store.CreateHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, disabledpreinstall, allowinstall, allowpostinstall, announce)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -271,7 +273,7 @@ func cmdLs(c *cli.Context) {
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
 
 	if !quiet {
-		fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATUS")
+		fmt.Fprintln(w, "NAME\tACTIVE\tSTATUS")
 	}
 
 	items := []hostListItem{}
@@ -298,15 +300,15 @@ func cmdLs(c *cli.Context) {
 		if item.Active {
 			activeString = "*"
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
-			item.Name, activeString, item.DriverName, item.Status)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%t\n",
+			item.Name, activeString, item.Status, item.DisabledPreinstall)
 	}
 
 	w.Flush()
 }
 
 func cmdListen(c *cli.Context) {
-	gather := c.Bool("gather")
+	//gather := c.Bool("gather")
 	os.Setenv("STASIS_HTTP_STATIC_PATH", c.String("static"))
 	os.Setenv("STASIS_HTTP_PORT", c.String("port"))
 	store := NewHostStore(c.GlobalString("storage-path"))
@@ -315,28 +317,28 @@ func cmdListen(c *cli.Context) {
 		log.Errorf("There is no machines or location to store them.")
 		cli.ShowCommandHelp(c, "H c")
 		os.Exit(1)
-	} else if err == nil {
-		if gather {
-			name := c.Args().First()
-			if name == "" {
-				_, err := store.GetActive()
-				if err != nil {
-					log.Fatalf("unable to get active host: %v", err)
-				}
-			} else {
-				host, err := store.Load(name)
-				if err != nil {
-					log.Fatalf("error loading host: %v", err)
-				}
+	} /*else if err == nil {
+	if gather {
+		name := c.Args().First()
+		if name == "" {
+			_, err := store.GetActive()
+			if err != nil {
+				log.Fatalf("unable to get active host: %v", err)
+			}
+		} else {
+			host, err := store.Load(name)
+			if err != nil {
+				log.Fatalf("error loading host: %v", err)
+			}
 
-				if err := store.SetActive(host); err != nil {
-					log.Fatalf("error setting active host: %v", err)
-				}
+			if err := store.SetActive(host); err != nil {
+				log.Fatalf("error setting active host: %v", err)
 			}
 		}
-		initRouter()
+	}*/
+	initRouter()
 
-	}
+	//	}
 }
 
 func cmdListTemplates(c *cli.Context) {

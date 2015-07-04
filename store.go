@@ -1,12 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"encoding/json"
 	"path/filepath"
-	log "github.com/Sirupsen/logrus"
 )
 
 // Store persists hosts on the filesystem
@@ -41,7 +41,7 @@ func (s *Store) Save(host *Host) error {
 	return nil
 }
 
-func (s *Store) CreateHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status string, announce bool) (*Host, error) {
+func (s *Store) CreateHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status string, disabledpreinstall, allowinstall, allowpostinstall, announce bool) (*Host, error) {
 	exists, err := s.Exists(name)
 	if err != nil {
 		return nil, err
@@ -53,11 +53,10 @@ func (s *Store) CreateHost(name, storePath, mac, preinstall, install, username, 
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, announce)
+	host, err := NewHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, disabledpreinstall, allowinstall, allowpostinstall, announce)
 	if err != nil {
 		return host, err
 	}
-
 
 	if err := os.MkdirAll(hostPath, 0700); err != nil {
 		return nil, err
@@ -72,8 +71,6 @@ func (s *Store) CreateHost(name, storePath, mac, preinstall, install, username, 
 	//}
 	return host, nil
 }
-
-
 
 func (s *Store) GetMacaddress(macaddress string) (*Host, error) {
 	dir, err := ioutil.ReadDir(s.Path)

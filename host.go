@@ -6,30 +6,29 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	//"github.com/pandrew/stasis/drivers"
-
 )
 
-
+// Host struct
 type Host struct {
-	Name				string
-	StorePath		string
-	Macaddress	string
-	Preinstall	string
-	Install     string
-	Username		string
-	Password		string
-	Postinstall string
-	WindowsKey	string
-	Append			string
-	Mirror			string
-	Kernel			string
-	Initrd			string
-	Status			string
-	Announce    bool
+	Name               string
+	StorePath          string
+	Macaddress         string
+	Preinstall         string
+	DisabledPreinstall bool
+	Install            string
+	AllowInstall       bool
+	Username           string
+	Password           string
+	Postinstall        string
+	AllowPostinstall   bool
+	WindowsKey         string
+	Append             string
+	Mirror             string
+	Kernel             string
+	Initrd             string
+	Status             string
+	Announce           bool
 }
-
 
 func NewHost(
 	name,
@@ -46,23 +45,29 @@ func NewHost(
 	kernel,
 	initrd,
 	status string,
+	disabledpreinstall,
+	allowinstall,
+	allowpostinstall,
 	announce bool) (*Host, error) {
-	return &Host {
-		Name:					name,
-		StorePath:		storePath,
-		Macaddress:		mac,
-		Preinstall:		preinstall,
-		Install:			install,
-		Username:			username,
-		Password:			password,
-		Postinstall:	postinstall,
-		WindowsKey:		windowsKey,
-		Append:				append,
-		Mirror:				mirror,
-		Kernel:				kernel,
-		Initrd:				initrd,
-		Status:				status,
-		Announce:			announce,
+	return &Host{
+		Name:               name,
+		StorePath:          storePath,
+		Macaddress:         mac,
+		Preinstall:         preinstall,
+		DisabledPreinstall: disabledpreinstall,
+		Install:            install,
+		AllowInstall:       allowinstall,
+		Username:           username,
+		Password:           password,
+		Postinstall:        postinstall,
+		AllowPostinstall:   allowpostinstall,
+		WindowsKey:         windowsKey,
+		Append:             append,
+		Mirror:             mirror,
+		Kernel:             kernel,
+		Initrd:             initrd,
+		Status:             status,
+		Announce:           announce,
 	}, nil
 }
 
@@ -72,7 +77,6 @@ func NewHost(
 	}
 	return nil
 }*/
-
 
 func (h *Host) removeStorePath() error {
 	file, err := os.Stat(h.StorePath)
@@ -84,9 +88,6 @@ func (h *Host) removeStorePath() error {
 	}
 	return os.RemoveAll(h.StorePath)
 }
-
-
-
 
 func (h *Host) SaveConfig() error {
 	data, err := json.Marshal(h)
@@ -116,19 +117,19 @@ func (h *Host) LoadConfig() error {
 	if err != nil {
 		return err
 	}
-/*
-	// First pass: find the driver name and load the driver
-	var config hostConfig
-	if err := json.Unmarshal(data, &config); err != nil {
-		return err
-	}
+	/*
+		// First pass: find the driver name and load the driver
+		var config hostConfig
+		if err := json.Unmarshal(data, &config); err != nil {
+			return err
+		}
 
-	driver, err := drivers.NewDriver(config.DriverName, h.storePath)
-	if err != nil {
-		return err
-	}
-	h.Driver = driver
-*/
+		driver, err := drivers.NewDriver(config.DriverName, h.storePath)
+		if err != nil {
+			return err
+		}
+		h.Driver = driver
+	*/
 	// Second pass: unmarshal driver config into correct driver
 	if err := json.Unmarshal(data, &h); err != nil {
 		return err
