@@ -76,22 +76,28 @@ const index = `
 
 					</div>
 
-					{{ if .DisabledPreinstall  }}
-					<span class="label label-true">Disabled</span>
-        {{else}}
-        <span class="label label-false">Enabled</span>
+					{{ if .PermitPreinstall  }}
+					<span class="label label-true">Permit</span>
+					{{else}}
+					<span class="label label-false">Deny</span>
 					{{end}}
 		               </td>
                   <td>{{.Install}}
-		            	  <div class="btn-group btn-group-xs" role="group" aria-label="...">
-  		        		    <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/install/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
-				              <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/install"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
-			             </div>
+					<div class="btn-group btn-group-xs" role="group" aria-label="...">
+  		        		<a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/install/raw"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+				        <a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/install"><span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span></a>
+						<a type="button" class="btn btn-default btn-xs" href="/v1/{{ .Name }}/install/toggle"><span class="glyphicon glyphicon-retweet" aria-hidden="true"></span></a>
+					</div>
+					{{ if .PermitInstall }}
+					<span class="label label-true">Permit</span>
+					{{else}}
+					<span class="label label-false">Deny</span>
+					{{end}}
 		              </td>
 		            <td>
                 <span class="label label-{{.Status}}">{{.Status}}</span>
                   <div class="btn-group btn-group-xs" role="group" aria-label="...">
-                    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Name}}/toggle"><span class="glyphicon glyphicon-retweet" aria-hidden="true"></span></a>
+                    <a type="button" class="btn btn-default btn-xs" href="/v1/{{.Name}}/status/toggle"><span class="glyphicon glyphicon-retweet" aria-hidden="true"></span></a>
                   </div>
                 </td>
                   <td>{{.Macaddress}}

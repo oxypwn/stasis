@@ -14,13 +14,13 @@ type Host struct {
 	StorePath          string
 	Macaddress         string
 	Preinstall         string
-	DisabledPreinstall bool
+	PermitPreinstall bool
 	Install            string
-	AllowInstall       bool
+	PermitInstall    bool
 	Username           string
 	Password           string
 	Postinstall        string
-	AllowPostinstall   bool
+	PermitPostinstall   bool
 	WindowsKey         string
 	Append             string
 	Mirror             string
@@ -45,8 +45,8 @@ func NewHost(
 	kernel,
 	initrd,
 	status string,
-	disabledpreinstall,
-	allowinstall,
+	permitpreinstall,
+	permitinstall,
 	allowpostinstall,
 	announce bool) (*Host, error) {
 	return &Host{
@@ -54,13 +54,13 @@ func NewHost(
 		StorePath:          storePath,
 		Macaddress:         mac,
 		Preinstall:         preinstall,
-		DisabledPreinstall: disabledpreinstall,
+		PermitPreinstall: permitpreinstall,
 		Install:            install,
-		AllowInstall:       allowinstall,
+		PermitInstall:    permitinstall,
 		Username:           username,
 		Password:           password,
 		Postinstall:        postinstall,
-		AllowPostinstall:   allowpostinstall,
+		PermitPostinstall:   allowpostinstall,
 		WindowsKey:         windowsKey,
 		Append:             append,
 		Mirror:             mirror,

@@ -67,7 +67,17 @@ func init() {
 			log.Println(err)
 		}
 	}
+	pathPreinstall := preinstallDir()
+	pathPreinstallExist, _ := DirExists(pathPreinstall)
+	if !pathPreinstallExist {
+		dirPreinstall := preinstallDir()
+		uri := "https://github.com/pandrew/stasis-preinstall.git"
 
+		err := gitDownload(dirPreinstall, uri)
+		if err != nil {
+			log.Fatal(os.Stderr, err)
+		}
+	}
 }
 
 func initRouter() {
@@ -83,8 +93,10 @@ func initRouter() {
 	r.HandleFunc("/v1/{id}/preinstall/enable", EnablePreinstall)
 	r.HandleFunc("/v1/{id}/install", ReturnInstall)
 	r.HandleFunc("/v1/{id}/install/raw", ReturnRawInstall)
+	r.HandleFunc("/v1/{id}/install/toggle", ToggleInstall)
+	r.HandleFunc("/v1/{id}/status/toggle", Toggle)
+	r.HandleFunc("/v1/{id}/preinstall/disable", DisablePreinstall)
 	r.HandleFunc("/v1/info/stats", ReturnStats)
-	r.HandleFunc("/v1/{id}/toggle", ToggleAnnounce)
 	r.HandleFunc("/v1/{id}/announce", GatherMac)
 	r.HandleFunc("/v1/{id}/select", Select)
 	http.Handle("/", r)
@@ -93,7 +105,11 @@ func initRouter() {
 	if port == "" {
 		os.Setenv("STASIS_HTTP_PORT", "8080")
 	}
-	log.Info("Listening on: ", port)
+	addr := os.Getenv("STASIS_HTTP_ADDR")
+	if addr == "" {
+		os.Setenv("STASIS_HTTP_ADDR", "localhost")
+	}
+	log.Info("Listening on: ", os.Getenv("STASIS_HTTP_ADDR")+":"+os.Getenv("STASIS_HTTP_PORT"))
 	path := os.Getenv("STASIS_HOST_STORAGE_PATH")
 	log.Info("Using path: ", path)
 	static := os.Getenv("STASIS_HTTP_STATIC_PATH")
@@ -102,7 +118,7 @@ func initRouter() {
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(static)))
 
 	log.Println("Listening...")
-	http.ListenAndServe(":"+os.Getenv("STASIS_HTTP_PORT"), nil)
+	http.ListenAndServe(os.Getenv("STASIS_HTTP_ADDR")+":"+os.Getenv("STASIS_HTTP_PORT"), nil)
 }
 
 func ReturnInspect(w http.ResponseWriter, r *http.Request) {
@@ -175,9 +191,10 @@ func ReturnInstall(w http.ResponseWriter, r *http.Request) {
 		inst := installDir()
 		ValidateTemplates(inst, extInstall)
 		//test := host.Install
-		if len(host.Install) != 0 {
+		if len(host.Install) != 0 && host.PermitInstall == true {
 			tmpl := host.Install + extInstall
 			renderTemplate(w, tmpl, host)
+			host.PermitInstall = false
 		} else {
 			http.NotFound(w, r)
 
@@ -231,13 +248,14 @@ func ReturnPreinstall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if host.Name == active.Name {
-		if host.DisabledPreinstall == false {
+		if host.PermitPreinstall == true {
 			pre := preinstallDir()
 			ValidateTemplates(pre, extPreinstall)
 
 			tmpl := host.Preinstall + extPreinstall
 			renderTemplate(w, tmpl, host)
 
+			host.PermitPreinstall = false
 			host.Status = "INSTALLED"
 			host.SaveConfig()
 		} else if host.Status == "INSTALLED" {
@@ -253,6 +271,7 @@ func ReturnPreinstall(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
+
 func ReturnRawPreinstall(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -324,7 +343,7 @@ func GatherMac(w http.ResponseWriter, r *http.Request) {
 
 var templates *template.Template
 
-func ToggleAnnounce(w http.ResponseWriter, r *http.Request) {
+func Toggle(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	hostname := vars["id"]
 	//macaddress := vars["id"]
@@ -337,14 +356,20 @@ func ToggleAnnounce(w http.ResponseWriter, r *http.Request) {
 	log.Println(host)
 	if host.Announce == false {
 		host.Announce = true
+		host.PermitPreinstall = true
+		host.PermitInstall = true
 		host.Status = "ACTIVE"
 		log.Infof("%s: Announce is now true", host.Name)
 	} else if host.Announce == true {
 		host.Announce = false
+		host.PermitPreinstall = false
+		host.PermitInstall = false
 		host.Status = "INACTIVE"
 		log.Infof("%s: Announce is now false", host.Name)
 	} else {
 		host.Announce = false
+		host.PermitPreinstall = false
+		host.PermitInstall = false
 		host.Status = "INSTALLED"
 		log.Infof("%s is now INSTALLED", host.Name)
 
@@ -353,6 +378,29 @@ func ToggleAnnounce(w http.ResponseWriter, r *http.Request) {
 	host.SaveConfig()
 	http.Redirect(w, r, "/v1/info/stats", http.StatusFound)
 
+}
+
+func ToggleInstall(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	hostname := vars["id"]
+	//macaddress := vars["id"]
+	store := NewHostStore(os.Getenv("STASIS_HOST_STORAGE_PATH"))
+	host, err := store.Load(hostname)
+	if err != nil {
+		log.Println(err)
+	}
+
+	log.Println(host)
+	if host.PermitInstall == false {
+		host.PermitInstall = true
+		log.Infof("%s: PermitInstall is now true", host.Name)
+	} else if host.PermitInstall == true {
+		host.PermitInstall = false
+		log.Infof("%s: PermitInstall is now false", host.Name)
+	}
+
+	host.SaveConfig()
+	http.Redirect(w, r, "/v1/info/stats", http.StatusFound)
 }
 
 func TogglePreinstall(w http.ResponseWriter, r *http.Request) {
@@ -366,12 +414,12 @@ func TogglePreinstall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println(host)
-	if host.DisabledPreinstall == false {
-		host.DisabledPreinstall = true
-		log.Infof("%s: DisabledPreinstall is now true", host.Name)
-	} else if host.DisabledPreinstall == true {
-		host.DisabledPreinstall = false
-		log.Infof("%s: DisabledPreinstall is now false", host.Name)
+	if host.PermitPreinstall == false {
+		host.PermitPreinstall = true
+		log.Infof("%s: PermitPreinstall is now true", host.Name)
+	} else if host.PermitPreinstall == true {
+		host.PermitPreinstall = false
+		log.Infof("%s: PermitPreinstall is now false", host.Name)
 	}
 
 	host.SaveConfig()
@@ -389,8 +437,8 @@ func DisablePreinstall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println(host)
-	if host.DisabledPreinstall == true {
-		host.DisabledPreinstall = false
+	if host.PermitPreinstall == true {
+		host.PermitPreinstall = false
 	}
 
 	host.SaveConfig()
@@ -409,8 +457,8 @@ func EnablePreinstall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println(host)
-	if host.DisabledPreinstall == false {
-		host.DisabledPreinstall = true
+	if host.PermitPreinstall == false {
+		host.PermitPreinstall = true
 	}
 
 	host.SaveConfig()

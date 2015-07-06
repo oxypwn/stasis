@@ -41,7 +41,7 @@ func (s *Store) Save(host *Host) error {
 	return nil
 }
 
-func (s *Store) CreateHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status string, disabledpreinstall, allowinstall, allowpostinstall, announce bool) (*Host, error) {
+func (s *Store) CreateHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status string, permitpreinstall, permitinstall, allowpostinstall, announce bool) (*Host, error) {
 	exists, err := s.Exists(name)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (s *Store) CreateHost(name, storePath, mac, preinstall, install, username, 
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, disabledpreinstall, allowinstall, allowpostinstall, announce)
+	host, err := NewHost(name, storePath, mac, preinstall, install, username, password, postinstall, windowsKey, append, mirror, kernel, initrd, status, permitpreinstall, permitinstall, allowpostinstall, announce)
 	if err != nil {
 		return host, err
 	}

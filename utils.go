@@ -1,19 +1,38 @@
 package main
 
 import (
-	"io/ioutil"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"html/template"
+	"io/ioutil"
 	"os"
-	"regexp"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 )
 
+func gitDownload(path, uri string) error {
+	var (
+		cmdOut []byte
+		err    error
+	)
+	if path == "" {
+		log.Fatal("Git: Path must be set")
+		os.Exit(1)
+	}
+	cmdName := "git"
+	cmdArgs := []string{"clone", uri, path}
+	cmdOut, err = exec.Command(cmdName, cmdArgs...).Output()
+
+	fmt.Println(string(cmdOut))
+
+	return err
+}
+
 func ValidateHostName(name string) bool {
 	validHostNamePattern := regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])+$`)
-	return validHostNamePattern.MatchString(name) 
+	return validHostNamePattern.MatchString(name)
 }
 
 func ValidateMacaddr(mac string) (string, error) {
@@ -49,12 +68,11 @@ func ValidateTemplates(path, extension string) {
 	}
 }
 
-
 func listTemplates(path string) {
 	files, _ := ioutil.ReadDir(path)
-    for _, f := range files {
-            fmt.Println(f.Name())
-    }
+	for _, f := range files {
+		fmt.Println(f.Name())
+	}
 }
 
 func GetHomeDir() string {
